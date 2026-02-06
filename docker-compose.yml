@@ -1,0 +1,22 @@
+services:
+  api:
+    build: .
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=/app/data/prod.db
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    volumes:
+      - api-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  api-data:

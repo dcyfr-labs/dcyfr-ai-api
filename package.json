@@ -1,0 +1,61 @@
+{
+  "name": "@dcyfr/ai-api",
+  "version": "0.1.0",
+  "description": "Production-ready REST API starter template with Express 5, Drizzle ORM, JWT, and OpenAPI",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/db/seed.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.38.4",
+    "express": "^5.1.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "better-sqlite3": "^11.8.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.12.0",
+    "@types/swagger-ui-express": "^4.1.7",
+    "drizzle-kit": "^0.30.5",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "prettier": "^3.4.2",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.22.0",
+    "vitest": "^2.1.9"
+  },
+  "keywords": ["dcyfr", "api", "express", "rest", "typescript", "drizzle", "template"],
+  "license": "MIT"
+}
