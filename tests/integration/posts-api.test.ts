@@ -66,6 +66,7 @@ describe('Post API Endpoints', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
       
       // Should only include published posts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const titles = res.body.data.map((p: any) => p.title);
       expect(titles).toContain('Alice First Post');
       expect(titles).not.toContain('Alice Draft Post'); // Draft should not be visible
@@ -81,11 +82,13 @@ describe('Post API Endpoints', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
       
       // Authenticated user sees their own posts (published and drafts)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const titles = res.body.data.map((p: any) => p.title);
       expect(titles).toContain('Alice First Post');
       expect(titles).toContain('Alice Draft Post');
       
       // All posts should belong to user1
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       res.body.data.forEach((post: any) => {
         expect(post.authorId).toBe(user1Id);
       });
