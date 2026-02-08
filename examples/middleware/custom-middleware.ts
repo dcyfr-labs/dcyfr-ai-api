@@ -53,6 +53,7 @@ export function requestTimer(logger: Logger) {
     const originalEnd = res.end;
 
     // Override end to log timing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     res.end = function (...args: any[]) {
       const duration = performance.now() - start;
 
