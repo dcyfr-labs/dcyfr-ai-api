@@ -1,8 +1,25 @@
 /**
- * Test setup
+ * Test setup - Ensures database is properly initialized for integration tests
  */
-import { afterAll } from 'vitest';
+import { beforeAll, afterAll, beforeEach } from 'vitest';
 import { rmSync, existsSync } from 'node:fs';
+import { sqliteDb } from '../src/db/connection.js';
+import { migrate } from '../src/db/migrate.js';
+
+// Run migrations before all tests
+beforeAll(() => {
+  migrate(sqliteDb);
+});
+
+// Clean database before each test
+beforeEach(() => {
+  // Clear all tables
+  const tables = sqliteDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as Array<{ name: string }>;
+  
+  tables.forEach((table) => {
+    sqliteDb.prepare(`DELETE FROM ${table.name}`).run();
+  });
+});
 
 // Clean up test databases after all tests
 afterAll(() => {
