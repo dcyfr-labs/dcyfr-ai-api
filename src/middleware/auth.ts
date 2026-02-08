@@ -4,7 +4,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
-import { UnauthorizedError } from '../lib/errors.js';
+import { UnauthorizedError, ForbiddenError } from '../lib/errors.js';
 
 export interface JwtPayload {
   userId: number;
@@ -66,7 +66,7 @@ export function authorize(...roles: string[]) {
       throw new UnauthorizedError('Authentication required');
     }
     if (!roles.includes(req.user.role)) {
-      throw new UnauthorizedError('Insufficient permissions');
+      throw new ForbiddenError('Insufficient permissions');
     }
     next();
   };

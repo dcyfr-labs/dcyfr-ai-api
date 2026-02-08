@@ -58,8 +58,8 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
-      expect(res.body.errors.body).toBeDefined();
+      expect(res.body.error).toBeDefined();
+      expect(res.body.error.details).toBeDefined();
     });
 
     it('should reject password shorter than 8 characters', async () => {
@@ -70,8 +70,8 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
-      expect(res.body.errors.body).toBeDefined();
+      expect(res.body.error).toBeDefined();
+      expect(res.body.error.details).toBeDefined();
     });
 
     it('should reject missing required fields', async () => {
@@ -81,7 +81,7 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should reject empty name', async () => {
@@ -92,7 +92,7 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors.body).toBeDefined();
+      expect(res.body.error.details).toBeDefined();
     });
   });
 
@@ -128,7 +128,8 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(401);
-      expect(res.body.error).toBe('Invalid email or password');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.error.message).toBe('Invalid email or password');
     });
 
     it('should reject login with non-existent email', async () => {
@@ -138,7 +139,8 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(401);
-      expect(res.body.error).toBe('Invalid email or password');
+      expect(res.body.error).toBeDefined();
+      expect(res.body.error.message).toBe('Invalid email or password');
     });
 
     it('should reject login with invalid email format', async () => {
@@ -148,7 +150,7 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should reject login with missing password', async () => {
@@ -158,7 +160,7 @@ describe('Authentication Flows', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
   });
 

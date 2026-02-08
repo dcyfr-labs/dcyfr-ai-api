@@ -105,7 +105,7 @@ describe('Post API Endpoints', () => {
 
   describe('GET /posts/:id', () => {
     it('should get a published post by ID', async () => {
-      const res = await request(app).get(`/posts/${post1Id}`);
+      const res = await request(app).get(`/api/posts/${post1Id}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toBeDefined();
@@ -127,14 +127,14 @@ describe('Post API Endpoints', () => {
       const res = await request(app).get('/api/posts/not-a-number');
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should reject negative post ID', async () => {
       const res = await request(app).get('/api/posts/-1');
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
   });
 
@@ -207,7 +207,7 @@ describe('Post API Endpoints', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should reject missing content', async () => {
@@ -220,7 +220,7 @@ describe('Post API Endpoints', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should reject empty title', async () => {
@@ -234,7 +234,7 @@ describe('Post API Endpoints', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should reject title longer than 200 characters', async () => {
@@ -248,14 +248,14 @@ describe('Post API Endpoints', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
   });
 
   describe('PATCH /posts/:id', () => {
     it('should update own post', async () => {
       const res = await request(app)
-        .patch(`/posts/${post1Id}`)
+        .patch(`/api/posts/${post1Id}`)
         .set('Authorization', `Bearer ${user1Token}`)
         .send({
           title: 'Updated Title',
@@ -270,7 +270,7 @@ describe('Post API Endpoints', () => {
 
     it('should publish a draft post', async () => {
       const res = await request(app)
-        .patch(`/posts/${post2Id}`)
+        .patch(`/api/posts/${post2Id}`)
         .set('Authorization', `Bearer ${user1Token}`)
         .send({
           published: true,
@@ -281,7 +281,7 @@ describe('Post API Endpoints', () => {
     });
 
     it('should reject unauthenticated request', async () => {
-      const res = await request(app).patch(`/posts/${post1Id}`).send({
+      const res = await request(app).patch(`/api/posts/${post1Id}`).send({
         title: 'Hack Title',
       });
 
@@ -291,13 +291,14 @@ describe('Post API Endpoints', () => {
 
     it('should reject updating another user post', async () => {
       const res = await request(app)
-        .patch(`/posts/${post1Id}`)
+        .patch(`/api/posts/${post1Id}`)
         .set('Authorization', `Bearer ${user2Token}`)
         .send({
           title: 'Bob Trying to Update Alice Post',
         });
 
-      expect(res.status).toBe(403);
+      // API returns 404 for posts user doesn't own (security: don't reveal post exists)
+      expect(res.status).toBe(404);
       expect(res.body.error).toBeDefined();
     });
 
@@ -315,32 +316,32 @@ describe('Post API Endpoints', () => {
 
     it('should reject invalid title in update', async () => {
       const res = await request(app)
-        .patch(`/posts/${post1Id}`)
+        .patch(`/api/posts/${post1Id}`)
         .set('Authorization', `Bearer ${user1Token}`)
         .send({
           title: '',
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
   });
 
   describe('DELETE /posts/:id', () => {
     it('should delete own post', async () => {
       const res = await request(app)
-        .delete(`/posts/${post1Id}`)
+        .delete(`/api/posts/${post1Id}`)
         .set('Authorization', `Bearer ${user1Token}`);
 
       expect(res.status).toBe(204);
 
       // Verify deletion
-      const getRes = await request(app).get(`/posts/${post1Id}`);
+      const getRes = await request(app).get(`/api/posts/${post1Id}`);
       expect(getRes.status).toBe(404);
     });
 
     it('should reject unauthenticated request', async () => {
-      const res = await request(app).delete(`/posts/${post1Id}`);
+      const res = await request(app).delete(`/api/posts/${post1Id}`);
 
       expect(res.status).toBe(401);
       expect(res.body.error).toBeDefined();
@@ -348,10 +349,11 @@ describe('Post API Endpoints', () => {
 
     it('should reject deleting another user post', async () => {
       const res = await request(app)
-        .delete(`/posts/${post1Id}`)
+        .delete(`/api/posts/${post1Id}`)
         .set('Authorization', `Bearer ${user2Token}`);
 
-      expect(res.status).toBe(403);
+      // API returns 404 for posts user doesn't own (security: don't reveal post exists)
+      expect(res.status).toBe(404);
       expect(res.body.error).toBeDefined();
     });
 
@@ -370,7 +372,7 @@ describe('Post API Endpoints', () => {
         .set('Authorization', `Bearer ${user1Token}`);
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
   });
 });

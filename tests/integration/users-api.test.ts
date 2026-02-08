@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import { createTestApp, resetTestDb } from '../helpers.js';
+import { createTestApp, resetTestDb, promoteToAdmin, generateAdminToken } from '../helpers.js';
 
 describe('User API Endpoints', () => {
   const app = createTestApp();
@@ -22,11 +22,11 @@ describe('User API Endpoints', () => {
       name: 'Admin User',
       password: 'AdminPassword123!',
     });
-    adminToken = adminRes.body.token;
     adminUserId = adminRes.body.user.id;
 
-    // Manually set admin role (in real app, this would be done differently)
-    // For now, we'll work with the limitation that we can't easily promote to admin via API
+    // Promote to admin role and generate new token with admin role
+    promoteToAdmin(adminUserId);
+    adminToken = generateAdminToken(adminUserId, 'admin@example.com');
 
     // Create regular user
     const userRes = await request(app).post('/api/auth/register').send({
@@ -93,7 +93,7 @@ describe('User API Endpoints', () => {
   describe('GET /users/:id', () => {
     it('should get a user by ID when authenticated', async () => {
       const res = await request(app)
-        .get(`/users/${userUserId}`)
+        .get(`/api/users/${userUserId}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
@@ -104,7 +104,7 @@ describe('User API Endpoints', () => {
     });
 
     it('should reject unauthorized request', async () => {
-      const res = await request(app).get(`/users/${userUserId}`);
+      const res = await request(app).get(`/api/users/${userUserId}`);
 
       expect(res.status).toBe(401);
       expect(res.body.error).toBeDefined();
@@ -125,7 +125,7 @@ describe('User API Endpoints', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should reject negative user ID', async () => {
@@ -134,14 +134,14 @@ describe('User API Endpoints', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
   });
 
   describe('PATCH /users/:id', () => {
     it('should update user as admin', async () => {
       const res = await request(app)
-        .patch(`/users/${userUserId}`)
+        .patch(`/api/users/${userUserId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Updated Name',
@@ -157,7 +157,7 @@ describe('User API Endpoints', () => {
     });
 
     it('should reject unauthorized request', async () => {
-      const res = await request(app).patch(`/users/${userUserId}`).send({
+      const res = await request(app).patch(`/api/users/${userUserId}`).send({
         name: 'Hacker Name',
       });
 
@@ -167,7 +167,7 @@ describe('User API Endpoints', () => {
 
     it('should reject regular user (non-admin)', async () => {
       const res = await request(app)
-        .patch(`/users/${adminUserId}`)
+        .patch(`/api/users/${adminUserId}`)
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           name: 'Unauthorized Update',
@@ -179,14 +179,14 @@ describe('User API Endpoints', () => {
 
     it('should reject invalid email format in update', async () => {
       const res = await request(app)
-        .patch(`/users/${userUserId}`)
+        .patch(`/api/users/${userUserId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           email: 'not-an-email',
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
 
     it('should return 404 for non-existent user ID', async () => {
@@ -205,7 +205,7 @@ describe('User API Endpoints', () => {
   describe('DELETE /users/:id', () => {
     it('should delete user as admin', async () => {
       const res = await request(app)
-        .delete(`/users/${userUserId}`)
+        .delete(`/api/users/${userUserId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       // May return 204 or 403 depending on authorization
@@ -214,7 +214,7 @@ describe('User API Endpoints', () => {
       if (res.status === 204) {
         // Verify user is deleted
         const getRes = await request(app)
-          .get(`/users/${userUserId}`)
+          .get(`/api/users/${userUserId}`)
           .set('Authorization', `Bearer ${adminToken}`);
 
         expect(getRes.status).toBe(404);
@@ -222,7 +222,7 @@ describe('User API Endpoints', () => {
     });
 
     it('should reject unauthorized request', async () => {
-      const res = await request(app).delete(`/users/${userUserId}`);
+      const res = await request(app).delete(`/api/users/${userUserId}`);
 
       expect(res.status).toBe(401);
       expect(res.body.error).toBeDefined();
@@ -230,7 +230,7 @@ describe('User API Endpoints', () => {
 
     it('should reject regular user (non-admin)', async () => {
       const res = await request(app)
-        .delete(`/users/${adminUserId}`)
+        .delete(`/api/users/${adminUserId}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(403);
@@ -252,7 +252,7 @@ describe('User API Endpoints', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(400);
-      expect(res.body.errors).toBeDefined();
+      expect(res.body.error).toBeDefined();
     });
   });
 });
