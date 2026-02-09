@@ -2,6 +2,8 @@
 
 Production-ready REST API starter template built with Express 5, Drizzle ORM, JWT authentication, and OpenAPI documentation.
 
+> **📦 Starter Template** — This is a **starter template** for cloning, not an npm package. Use `git clone` or download the source to create your own REST API application. This package is marked `private: true` and is not published to npm.
+
 ## Tech Stack
 
 | Category | Technology | Version |
