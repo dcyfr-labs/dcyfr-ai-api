@@ -73,5 +73,9 @@
     "drizzle",
     "template"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dcyfr/dcyfr-ai-api"
+  }
 }
