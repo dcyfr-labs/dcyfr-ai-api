@@ -47,7 +47,6 @@ router.post('/login', validate({ body: loginSchema }), async (req, res) => {
 
   const token = generateToken({ userId: user.id, email: user.email, role: user.role });
   const { passwordHash: _, ...safeUser } = user;
-  void _;
 
   res.json({
     user: safeUser,

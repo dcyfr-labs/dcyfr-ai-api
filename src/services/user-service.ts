@@ -38,7 +38,6 @@ export class UserService {
 
     const passwordHash = await hashPassword(data.password);
     const { password: _, ...rest } = data;
-    void _;
 
     const results = this.db
       .insert(users)
@@ -47,7 +46,6 @@ export class UserService {
       .all();
 
     const { passwordHash: _ph, ...user } = results[0]!;
-    void _ph;
     return user;
   }
 
@@ -63,7 +61,6 @@ export class UserService {
       .all();
 
     const { passwordHash: _, ...user } = results[0]!;
-    void _;
     return user;
   }
 
