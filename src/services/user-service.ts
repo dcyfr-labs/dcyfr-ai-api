@@ -20,7 +20,7 @@ export class UserService {
   async findById(id: number): Promise<Omit<User, 'passwordHash'>> {
     const result = this.db.select().from(users).where(eq(users.id, id)).get();
     if (!result) throw new NotFoundError('User', id);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { passwordHash: _, ...user } = result;
     return user;
   }
