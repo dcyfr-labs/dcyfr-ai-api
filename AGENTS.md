@@ -38,3 +38,8 @@ npm run db:seed      # Seed database
 - Framework: Vitest 2.1 + Supertest 7
 - 75 tests across 9 test files
 - In-memory SQLite for test isolation
+
+## Quality Gates
+- TypeScript: 0 errors (`npm run typecheck`)
+- Tests: ≥99% pass rate (`npm run test`)
+- Lint: 0 errors (`npm run lint`)
