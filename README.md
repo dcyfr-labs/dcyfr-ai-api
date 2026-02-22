@@ -4,6 +4,35 @@ Production-ready REST API starter template built with Express 5, Drizzle ORM, JW
 
 > **📦 Starter Template** — This is a **starter template** for cloning, not an npm package. Use `git clone` or download the source to create your own REST API application. This package is marked `private: true` and is not published to npm.
 
+---
+
+## ⚡ 30-Second Quick Start
+
+```bash
+# Clone template
+npx degit dcyfr/dcyfr-ai-api my-api
+cd my-api
+
+# Install and start
+npm install
+npm run dev
+# ✅ API running at http://localhost:3001
+# 📖 Docs at http://localhost:3001/docs
+```
+
+---
+
+## 🧭 Related Packages
+
+| Package                                     | Purpose                  | Type        |
+| ------------------------------------------- | ------------------------ | ----------- |
+| [@dcyfr/ai](../dcyfr-ai)                    | Core AI framework        | npm package |
+| [@dcyfr/ai-nodejs](../dcyfr-ai-nodejs)      | Node.js starter template | Template    |
+| [@dcyfr/ai-graphql](../dcyfr-ai-graphql)    | GraphQL API template     | Template    |
+| [dcyfr-labs](../dcyfr-labs)                 | Production Next.js app   | Application |
+
+---
+
 ## Tech Stack
 
 | Category | Technology | Version |
