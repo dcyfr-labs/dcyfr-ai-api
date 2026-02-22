@@ -73,6 +73,7 @@
     "drizzle",
     "template"
   ],
+  "author": "DCYFR Labs",
   "license": "MIT",
   "repository": {
     "type": "git",
