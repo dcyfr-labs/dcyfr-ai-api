@@ -8,7 +8,10 @@ services:
       - PORT=3001
       - DATABASE_URL=/app/data/prod.db
       - JWT_SECRET=${JWT_SECRET}
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      # CORS: Whitelist specific origins only (comma-separated)
+      # Production: https://www.dcyfr.ai,https://dcyfr-labs.vercel.app
+      # Development: http://localhost:3000,http://localhost:3001
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000,http://localhost:3001}
     volumes:
       - api-data:/app/data
     restart: unless-stopped

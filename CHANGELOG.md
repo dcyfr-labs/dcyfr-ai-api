@@ -1,5 +1,11 @@
 # @dcyfr/ai-api
 
+## [Unreleased]
+
+### Security
+
+- **CORS hardening** — Replaced wildcard `*` origin with a comma-separated allowlist. `CORS_ORIGIN` env var now parsed into an array; requests from unlisted origins are rejected with a 403 and a `console.warn` log entry. Docker Compose default updated to `http://localhost:3000,http://localhost:3001`. `.env.example` documents the new format.
+
 ## 2.0.0
 
 ### Major Changes
