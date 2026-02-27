@@ -3,6 +3,27 @@
  */
 import 'dotenv/config';
 
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'JWT_SECRET environment variable is required in production. ' +
+        'Please set a strong secret value.'
+      );
+    }
+    // Development fallback with clear warning
+    console.warn(
+      '⚠️  WARNING: Using insecure development JWT secret. ' +
+      'Set JWT_SECRET environment variable for production use.'
+    );
+    return 'dev-secret-INSECURE-for-development-only';
+  }
+  
+  return secret;
+}
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3001', 10),
@@ -12,14 +33,18 @@ export const config = {
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
+    secret: getJwtSecret(),
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
 
   apiKeys: (process.env.API_KEYS || '').split(',').filter(Boolean),
 
   cors: {
-    origin: process.env.CORS_ORIGIN || '*',
+    // Parse comma-separated origins, fallback to localhost for development
+    origin: (process.env.CORS_ORIGIN || 'http://localhost:3000')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
   },
 
   log: {

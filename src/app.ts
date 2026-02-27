@@ -16,7 +16,21 @@ export function createApp() {
 
   // ─── Global Middleware ─────────────────────────────
   app.use(helmet());
-  app.use(cors({ origin: config.cors.origin }));
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = config.cors.origin;
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  }));
   app.use(express.json({ limit: '10mb' }));
   app.use(requestLogger);
 
