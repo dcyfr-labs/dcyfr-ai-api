@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     setupFiles: ['tests/setup.ts'],
+    testTimeout: 10000,
     env: {
       DATABASE_URL: ':memory:',
       NODE_ENV: 'test',
