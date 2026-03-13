@@ -55,6 +55,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
+      - run: npm run native:sqlite:ensure
       - run: npm run test:coverage
       - name: Upload coverage
         if: matrix.node-version == '22'

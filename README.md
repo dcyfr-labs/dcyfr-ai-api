@@ -35,35 +35,38 @@ npm run dev
 
 ## 🧭 Related Packages
 
-| Package                                     | Purpose                  | Type        |
-| ------------------------------------------- | ------------------------ | ----------- |
-| [@dcyfr/ai](../dcyfr-ai)                    | Core AI framework        | npm package |
-| [@dcyfr/ai-nodejs](../dcyfr-ai-nodejs)      | Node.js starter template | Template    |
-| [@dcyfr/ai-graphql](../dcyfr-ai-graphql)    | GraphQL API template     | Template    |
-| [dcyfr-labs](../dcyfr-labs)                 | Production Next.js app   | Application |
+| Package                                  | Purpose                  | Type        |
+| ---------------------------------------- | ------------------------ | ----------- |
+| [@dcyfr/ai](../dcyfr-ai)                 | Core AI framework        | npm package |
+| [@dcyfr/ai-nodejs](../dcyfr-ai-nodejs)   | Node.js starter template | Template    |
+| [@dcyfr/ai-graphql](../dcyfr-ai-graphql) | GraphQL API template     | Template    |
+| [dcyfr-labs](../dcyfr-labs)              | Production Next.js app   | Application |
 
 ---
 
 ## Tech Stack
 
-| Category | Technology | Version |
-|----------|-----------|---------|
-| **Framework** | Express | 5.x |
-| **Language** | TypeScript | 5.7+ |
-| **ORM** | Drizzle ORM | 0.38+ |
-| **Database** | SQLite (better-sqlite3) | — |
-| **Auth** | JWT (jsonwebtoken) | 9.x |
-| **Validation** | Zod | 3.24+ |
-| **Docs** | Swagger UI (OpenAPI 3.0) | — |
-| **Logging** | Pino | 9.x |
-| **Security** | Helmet + CORS | — |
-| **Testing** | Vitest + Supertest | 2.1 / 7.x |
+| Category       | Technology               | Version   |
+| -------------- | ------------------------ | --------- |
+| **Framework**  | Express                  | 5.x       |
+| **Language**   | TypeScript               | 5.7+      |
+| **ORM**        | Drizzle ORM              | 0.38+     |
+| **Database**   | SQLite (better-sqlite3)  | —         |
+| **Auth**       | JWT (jsonwebtoken)       | 9.x       |
+| **Validation** | Zod                      | 3.24+     |
+| **Docs**       | Swagger UI (OpenAPI 3.0) | —         |
+| **Logging**    | Pino                     | 9.x       |
+| **Security**   | Helmet + CORS            | —         |
+| **Testing**    | Vitest + Supertest       | 2.1 / 7.x |
 
 ## Quick Start
 
 ```bash
 # Install dependencies
 npm install
+
+# If Node 24 cannot load better-sqlite3 on your machine
+npm run native:sqlite:ensure
 
 # Start development server (with hot reload)
 npm run dev
@@ -85,26 +88,26 @@ The API server starts at [http://localhost:3001](http://localhost:3001).
 
 ## API Endpoints
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `GET` | `/health` | — | Health check |
-| `POST` | `/api/auth/register` | — | Register new user |
-| `POST` | `/api/auth/login` | — | Login (returns JWT) |
-| `GET` | `/api/users` | JWT (admin) | List all users |
-| `GET` | `/api/users/:id` | JWT | Get user by ID |
-| `PATCH` | `/api/users/:id` | JWT (admin) | Update user |
-| `DELETE` | `/api/users/:id` | JWT (admin) | Delete user |
-| `GET` | `/api/posts` | Optional | List posts |
-| `GET` | `/api/posts/:id` | — | Get post by ID |
-| `POST` | `/api/posts` | JWT | Create post |
-| `PATCH` | `/api/posts/:id` | JWT (owner) | Update post |
-| `DELETE` | `/api/posts/:id` | JWT (owner) | Delete post |
+| Method   | Path                 | Auth        | Description         |
+| -------- | -------------------- | ----------- | ------------------- |
+| `GET`    | `/health`            | —           | Health check        |
+| `POST`   | `/api/auth/register` | —           | Register new user   |
+| `POST`   | `/api/auth/login`    | —           | Login (returns JWT) |
+| `GET`    | `/api/users`         | JWT (admin) | List all users      |
+| `GET`    | `/api/users/:id`     | JWT         | Get user by ID      |
+| `PATCH`  | `/api/users/:id`     | JWT (admin) | Update user         |
+| `DELETE` | `/api/users/:id`     | JWT (admin) | Delete user         |
+| `GET`    | `/api/posts`         | Optional    | List posts          |
+| `GET`    | `/api/posts/:id`     | —           | Get post by ID      |
+| `POST`   | `/api/posts`         | JWT         | Create post         |
+| `PATCH`  | `/api/posts/:id`     | JWT (owner) | Update post         |
+| `DELETE` | `/api/posts/:id`     | JWT (owner) | Delete post         |
 
 API documentation available at [http://localhost:3001/docs](http://localhost:3001/docs) (Swagger UI).
 
 ## Project Structure
 
-```
+```text
 dcyfr-ai-api/
 ├── src/
 │   ├── index.ts              # Server entry point
@@ -154,12 +157,12 @@ dcyfr-ai-api/
 ### Request Validation (Zod + Middleware)
 
 ```typescript
-import { validate } from '../middleware/validate.js';
-import { z } from 'zod';
+import { validate } from "../middleware/validate.js";
+import { z } from "zod";
 
 const schema = z.object({ email: z.string().email(), name: z.string() });
 
-router.post('/', validate({ body: schema }), async (req, res) => {
+router.post("/", validate({ body: schema }), async (req, res) => {
   // req.body is typed and validated
   res.json(req.body);
 });
@@ -168,47 +171,47 @@ router.post('/', validate({ body: schema }), async (req, res) => {
 ### Authentication
 
 ```typescript
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate, authorize } from "../middleware/auth.js";
 
 // JWT required
-router.get('/profile', authenticate, handler);
+router.get("/profile", authenticate, handler);
 
 // JWT + admin role required
-router.delete('/:id', authenticate, authorize('admin'), handler);
+router.delete("/:id", authenticate, authorize("admin"), handler);
 ```
 
 ### Error Handling
 
 ```typescript
-import { NotFoundError, ValidationError } from '../lib/errors.js';
+import { NotFoundError, ValidationError } from "../lib/errors.js";
 
 // Throw structured errors - caught by global error handler
-throw new NotFoundError('User', 42);
+throw new NotFoundError("User", 42);
 // → 404 { error: { code: 'NOT_FOUND', message: "User with id '42' not found" } }
 ```
 
 ### Database (Drizzle ORM)
 
 ```typescript
-import { db } from '../db/connection.js';
-import { users } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { db } from "../db/connection.js";
+import { users } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
 const user = db.select().from(users).where(eq(users.id, 1)).get();
 ```
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment | `development` |
-| `PORT` | Server port | `3001` |
-| `DATABASE_URL` | SQLite database path | `./data/dev.db` |
-| `JWT_SECRET` | JWT signing secret | — |
-| `JWT_EXPIRES_IN` | Token expiry | `7d` |
-| `API_KEYS` | Comma-separated API keys | — |
-| `CORS_ORIGIN` | Allowed CORS origin | `*` |
-| `LOG_LEVEL` | Pino log level | `info` |
+| Variable         | Description              | Default         |
+| ---------------- | ------------------------ | --------------- |
+| `NODE_ENV`       | Environment              | `development`   |
+| `PORT`           | Server port              | `3001`          |
+| `DATABASE_URL`   | SQLite database path     | `./data/dev.db` |
+| `JWT_SECRET`     | JWT signing secret       | —               |
+| `JWT_EXPIRES_IN` | Token expiry             | `7d`            |
+| `API_KEYS`       | Comma-separated API keys | —               |
+| `CORS_ORIGIN`    | Allowed CORS origin      | `*`             |
+| `LOG_LEVEL`      | Pino log level           | `info`          |
 
 Copy `.env.example` to `.env` and configure.
 
@@ -230,6 +233,16 @@ npm run test:run      # Run all tests
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 ```
+
+### Native SQLite note
+
+On some Node 24 Linux/macOS environments, `better-sqlite3` may need a native rebuild before tests or database tasks can run. Use:
+
+```bash
+npm run native:sqlite:ensure
+```
+
+The script automatically prefers `clang`/`clang++` when available, which avoids the GCC 13 internal compiler error we have seen while compiling bundled SQLite sources.
 
 75 tests across 9 test files covering errors, schemas, middleware, services, and routes.
 

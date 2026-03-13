@@ -37,6 +37,9 @@ jobs:
         run: |
           npm install
           npm install -D @changesets/cli @changesets/changelog-github
+
+      - name: Ensure native SQLite binding
+        run: npm run native:sqlite:ensure
       
       - name: Upgrade npm for Trusted Publishing
         run: npm install -g npm@latest
