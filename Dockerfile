@@ -1,17 +1,17 @@
-FROM node:20-alpine AS base
+FROM oven/bun:1-alpine AS base
 WORKDIR /app
 
 # Install dependencies
 FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile --production
 
 # Build
 FROM base AS builder
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # Production
 FROM base AS runner
@@ -24,4 +24,4 @@ COPY --from=builder /app/package.json ./
 
 USER api
 EXPOSE 3001
-CMD ["node", "dist/index.js"]
+CMD ["bun", "dist/index.js"]
