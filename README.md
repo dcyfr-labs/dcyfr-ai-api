@@ -86,6 +86,10 @@ npm run db:seed
 
 The API server starts at [http://localhost:3001](http://localhost:3001).
 
+## Examples
+
+See [`examples/README.md`](examples/README.md) for runnable examples, prerequisites, and type-check commands.
+
 ## API Endpoints
 
 | Method   | Path                 | Auth        | Description         |

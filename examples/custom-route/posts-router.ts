@@ -65,7 +65,7 @@ router.post('/posts', (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: 'Validation failed',
-        details: error.errors,
+        details: error.issues,
       });
     }
 
@@ -92,7 +92,7 @@ router.put('/posts/:id', (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         error: 'Validation failed',
-        details: error.errors,
+        details: error.issues,
       });
     }
 

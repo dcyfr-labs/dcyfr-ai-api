@@ -65,7 +65,7 @@ export function requestTimer(logger: Logger) {
       });
 
       // Call original end
-      return originalEnd.apply(res, args);
+      return originalEnd.apply(res, args as Parameters<typeof originalEnd>);
     };
 
     next();
@@ -77,7 +77,7 @@ export function requestTimer(logger: Logger) {
  */
 export function requestId() {
   return (req: Request, res: Response, next: NextFunction) => {
-    const id = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     req.headers['x-request-id'] = id;
     res.setHeader('X-Request-Id', id);
     next();

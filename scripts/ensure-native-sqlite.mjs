@@ -55,7 +55,14 @@ function getClangEnv() {
 function tryLoadBetterSqlite3(fromDir) {
   try {
     const requireFromDir = createRequire(join(fromDir, "package.json"));
-    requireFromDir("better-sqlite3");
+    const BetterSqlite3 = requireFromDir("better-sqlite3");
+
+    // Force native binding load and basic execution to catch corrupted binaries.
+    const db = new BetterSqlite3(":memory:");
+    db.pragma("journal_mode = MEMORY");
+    db.prepare("SELECT 1").get();
+    db.close();
+
     return { ok: true };
   } catch (error) {
     return { ok: false, error };
