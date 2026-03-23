@@ -15,6 +15,15 @@ Production-ready REST API starter template built with Express 5, Drizzle ORM, JW
 
 > **📦 Starter Template** — This is a **starter template** for cloning, not an npm package. Use `git clone` or download the source to create your own REST API application. This package is marked `private: true` and is not published to npm.
 
+## About DCYFR
+
+`@dcyfr/ai-api` is maintained by **DCYFR Labs** as part of the DCYFR starter template portfolio.
+
+- **DCYFR** is a registered trademark of DCYFR Labs.
+- Primary domain: [www.dcyfr.ai](https://www.dcyfr.ai)
+- Trademark guidance: [../TRADEMARK.md](../TRADEMARK.md)
+- Licensing details: [LICENSE](./LICENSE)
+
 ---
 
 ## ⚡ 30-Second Quick Start

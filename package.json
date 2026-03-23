@@ -91,5 +91,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/dcyfr/dcyfr-ai-api"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/dcyfr/dcyfr-ai-api/issues"
+  },
+  "homepage": "https://github.com/dcyfr/dcyfr-ai-api#readme"
 }
