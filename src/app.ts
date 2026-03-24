@@ -8,7 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
-import { authRoutes, userRoutes, postRoutes, healthRoutes } from './routes/index.js';
+import { authRoutes, userRoutes, postRoutes, healthRoutes, webhookRoutes, deviceRoutes } from './routes/index.js';
 import { openApiSpec } from './openapi.js';
 
 export function createApp() {
@@ -31,7 +31,13 @@ export function createApp() {
     },
     credentials: true,
   }));
-  app.use(express.json({ limit: '10mb' }));
+  // Capture raw body for HMAC signature validation on webhook routes
+  app.use(express.json({
+    limit: '10mb',
+    verify: (req, _res, buf) => {
+      (req as unknown as { rawBody: string }).rawBody = buf.toString();
+    },
+  }));
   app.use(requestLogger);
 
   // ─── API Documentation ────────────────────────────
@@ -42,6 +48,8 @@ export function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/posts', postRoutes);
+  app.use('/api/devices', deviceRoutes);
+  app.use('/webhooks', webhookRoutes);
 
   // ─── Error Handler (must be last) ─────────────────
   app.use(errorHandler);
