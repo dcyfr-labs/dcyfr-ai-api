@@ -19,11 +19,11 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"],
-      "express-serve-static-core": ["../node_modules/@types/express/node_modules/@types/express-serve-static-core/index.d.ts"]
+      "express-serve-static-core": ["./node_modules/@types/express/node_modules/@types/express-serve-static-core/index.d.ts"]
     },
     "typeRoots": [
-      "../node_modules/@types/express/node_modules/@types",
-      "../node_modules/@types"
+      "./node_modules/@types/express/node_modules/@types",
+      "./node_modules/@types"
     ]
   },
   "include": ["src/**/*"],
