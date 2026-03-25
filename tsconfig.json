@@ -3,7 +3,9 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -18,15 +20,27 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "express-serve-static-core": ["./node_modules/@types/express/node_modules/@types/express-serve-static-core/index.d.ts"]
+      "@/*": [
+        "./src/*"
+      ],
+      "express-serve-static-core": [
+        "./node_modules/@types/express/node_modules/@types/express-serve-static-core/index.d.ts"
+      ]
     },
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "typeRoots": [
       "./node_modules/@types/express/node_modules/@types",
       "./node_modules/@types"
     ]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests"
+  ]
 }
