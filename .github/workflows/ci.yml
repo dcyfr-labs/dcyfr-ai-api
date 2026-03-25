@@ -17,11 +17,11 @@ jobs:
     continue-on-error: true  # Allow migration to proceed
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.13.0'
           cache: 'npm'
-      - run: npm ci
+      - run: npm install --include=dev
       - run: npm run lint
 
   typecheck:
@@ -32,11 +32,11 @@ jobs:
     continue-on-error: true  # Allow migration to proceed
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.13.0'
           cache: 'npm'
-      - run: npm ci
+      - run: npm install --include=dev
       - run: npm run typecheck
 
   test:
@@ -50,11 +50,11 @@ jobs:
         node-version: ['24.13.0']
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - run: npm ci
+      - run: npm install --include=dev
       - run: npm run native:sqlite:ensure
       - run: npm run test:run
       - name: Upload coverage
