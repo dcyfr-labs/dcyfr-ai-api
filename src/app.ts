@@ -8,7 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
-import { authRoutes, userRoutes, postRoutes, healthRoutes, webhookRoutes, deviceRoutes } from './routes/index.js';
+import { authRoutes, userRoutes, postRoutes, healthRoutes, webhookRoutes, deviceRoutes, securityScanRoutes } from './routes/index.js';
 import { openApiSpec } from './openapi.js';
 
 export function createApp() {
@@ -49,6 +49,7 @@ export function createApp() {
   app.use('/api/users', userRoutes);
   app.use('/api/posts', postRoutes);
   app.use('/api/devices', deviceRoutes);
+  app.use('/api/security-scans', securityScanRoutes);
   app.use('/webhooks', webhookRoutes);
 
   // ─── Error Handler (must be last) ─────────────────
