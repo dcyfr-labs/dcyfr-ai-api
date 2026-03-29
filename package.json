@@ -41,7 +41,7 @@
     "release": "npm run build && changeset publish"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^11.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -59,7 +59,7 @@
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.30.0",
     "@eslint/js": "^10.0.1",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
