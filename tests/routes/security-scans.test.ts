@@ -11,7 +11,7 @@
  * - GET returns 400 for non-UUID IDs
  * - Error path: failed scan reaches terminal state
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 
