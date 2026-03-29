@@ -1,5 +1,13 @@
 # @dcyfr/ai-api
 
+<!-- README-META
+  tlp_clearance: GREEN
+  status: active
+  name: dcyfr-ai-api
+  description: Production-ready REST API starter template with Express 5, Drizzle ORM, JWT, and OpenAPI
+  last_validated: 2026-03-29
+-->
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dcyfr/dcyfr-ai-api)
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
