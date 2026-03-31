@@ -94,7 +94,7 @@ export class ScanService {
         options: input.options,
       },
       {
-        onStateChange: (state, attempt) => {
+        onStateChange: (state: string, attempt: number) => {
           this.db
             .update(securityScans)
             .set({ state, attempts: attempt })
