@@ -37,8 +37,19 @@ npm run dev
 
 ## Pull Requests
 
-1. Create a feature branch
+**Branch Naming Convention:**
+```bash
+# Format: <type>/DCYFR-<NUMBER>-<description>
+git checkout -b feat/DCYFR-123-add-new-feature
+git checkout -b fix/DCYFR-456-resolve-bug
+```
+
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+
+**PR Workflow:**
+1. Create a feature branch following naming convention above
 2. Make changes with tests
 3. Ensure `npm run typecheck` passes
 4. Ensure `npm run test:run` passes
-5. Submit PR with clear description
+5. Submit PR with title: `[DCYFR-<NUMBER>] Brief description`
+6. Include `DCYFR-<NUMBER>` reference in commit messages
