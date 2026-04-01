@@ -97,7 +97,7 @@ export class ScanService {
         onStateChange: (state: string, attempt: number) => {
           this.db
             .update(securityScans)
-            .set({ state, attempts: attempt })
+            .set({ state: state as 'queued' | 'running' | 'complete' | 'failed', attempts: attempt })
             .where(eq(securityScans.id, scanId))
             .run();
         },
