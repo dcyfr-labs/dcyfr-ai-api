@@ -137,30 +137,7 @@ export type ScanFinding = typeof scanFindings.$inferSelect;
 export type NewScanFinding = typeof scanFindings.$inferInsert;
 
 
-// ─── Linear ↔ GitHub Correlation ───────────────────────────────────────────
-
-export const issueMappings = sqliteTable('issue_mappings', {
-  id: text('id').primaryKey(),
-  linearIssueId: text('linear_issue_id').notNull(),
-  linearIdentifier: text('linear_identifier').notNull(),
-  owner: text('owner').notNull(),
-  repo: text('repo').notNull(),
-  prNumber: integer('pr_number').notNull(),
-  correlationSource: text('correlation_source', {
-    enum: ['branch', 'pr_title', 'commit_message', 'pr_body'],
-  }).notNull(),
-  confidence: integer('confidence').notNull(),
-  lastVerifiedAt: text('last_verified_at').notNull(),
-  lastSyncAt: text('last_sync_at'),
-  syncErrorCount: integer('sync_error_count').notNull().default(0),
-  syncErrorMessage: text('sync_error_message'),
-  createdAt: text('created_at')
-    .notNull()
-    .default(sql`(datetime('now'))`),
-  updatedAt: text('updated_at')
-    .notNull()
-    .default(sql`(datetime('now'))`),
-});
+// ─── Linear ↔ GitHub Event Log ──────────────────────────────────────────────
 
 export const syncEvents = sqliteTable('sync_events', {
   id: text('id').primaryKey(),
@@ -173,7 +150,7 @@ export const syncEvents = sqliteTable('sync_events', {
   }).notNull(),
   source: text('source', { enum: ['github', 'linear'] }).notNull(),
   eventType: text('event_type').notNull(),
-  linkedMappingId: text('linked_mapping_id').references(() => issueMappings.id, {
+  linkedMappingId: integer('linked_mapping_id').references(() => issueMappings.id, {
     onDelete: 'set null',
   }),
   error: text('error'),
@@ -196,8 +173,6 @@ export const deadLetterEvents = sqliteTable('dead_letter_events', {
     .default(sql`(datetime('now'))`),
 });
 
-export type IssueMapping = typeof issueMappings.$inferSelect;
-export type NewIssueMapping = typeof issueMappings.$inferInsert;
 export type SyncEvent = typeof syncEvents.$inferSelect;
 export type NewSyncEvent = typeof syncEvents.$inferInsert;
 export type DeadLetterEvent = typeof deadLetterEvents.$inferSelect;
