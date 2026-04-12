@@ -1,7 +1,7 @@
 /**
  * GitHub webhook ingest route for Linear correlation.
  */
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import crypto from 'node:crypto';
 import { db } from '../../db/connection.js';
 import { logger } from '../../lib/logger.js';
@@ -32,6 +32,67 @@ interface GitHubPullRequestPayload {
     owner?: { login?: string };
   };
   sender?: { login?: string };
+}
+
+interface LinearWebhookRateLimitConfig {
+  maxRequests: number;
+  windowMs: number;
+  now?: () => number;
+}
+
+interface LinearWebhookRateLimitResult {
+  limited: boolean;
+  retryAfterSeconds?: number;
+}
+
+function parsePositiveInteger(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsed);
+}
+
+function buildDefaultRateLimitConfig(): LinearWebhookRateLimitConfig {
+  return {
+    maxRequests: parsePositiveInteger(process.env.LINEAR_WEBHOOK_RATE_LIMIT_MAX, 120),
+    windowMs: parsePositiveInteger(process.env.LINEAR_WEBHOOK_RATE_LIMIT_WINDOW_MS, 60_000),
+  };
+}
+
+function getClientIp(req: Request): string {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const forwardedValue = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+
+  if (typeof forwardedValue === 'string' && forwardedValue.trim().length > 0) {
+    return forwardedValue.split(',')[0]?.trim() || req.ip || 'unknown';
+  }
+
+  return req.ip || 'unknown';
+}
+
+function createRateLimiter(config: LinearWebhookRateLimitConfig) {
+  const requestsByIp = new Map<string, number[]>();
+
+  return (clientIp: string): LinearWebhookRateLimitResult => {
+    const now = config.now?.() ?? Date.now();
+    const minTimestamp = now - config.windowMs;
+    const activeTimestamps = (requestsByIp.get(clientIp) ?? []).filter((timestamp) => timestamp > minTimestamp);
+
+    if (activeTimestamps.length >= config.maxRequests) {
+      requestsByIp.set(clientIp, activeTimestamps);
+
+      const oldest = activeTimestamps[0] ?? now;
+      const retryAfterSeconds = Math.max(1, Math.ceil((config.windowMs - (now - oldest)) / 1000));
+      return { limited: true, retryAfterSeconds };
+    }
+
+    activeTimestamps.push(now);
+    requestsByIp.set(clientIp, activeTimestamps);
+
+    return { limited: false };
+  };
 }
 
 function validateGitHubSignature(
@@ -76,8 +137,13 @@ function toCorrelationEvent(payload: GitHubPullRequestPayload, eventId: string):
 function buildCorrelationService() {
   const mappingStore = new MappingStore(db);
   const linearApiKey = process.env.LINEAR_API_KEY;
+  const isRealKey = linearApiKey && !linearApiKey.startsWith('replace-with-');
 
-  const resolver = linearApiKey
+  if (!isRealKey) {
+    logger.warn({ action: 'linear_key_check' }, 'LINEAR_API_KEY is absent or a placeholder — Linear lookups will be no-ops');
+  }
+
+  const resolver = isRealKey
     ? new LinearGraphqlIssueResolver(linearApiKey)
     : new NoopLinearIssueResolver();
 
@@ -86,9 +152,10 @@ function buildCorrelationService() {
 
 function buildLinearSyncService() {
   const linearApiKey = process.env.LINEAR_API_KEY;
+  const isRealKey = linearApiKey && !linearApiKey.startsWith('replace-with-');
   const dryRun = (process.env.DRY_RUN ?? 'true').toLowerCase() !== 'false';
 
-  const client = linearApiKey
+  const client = isRealKey
     ? new LinearGraphqlWriteClient(linearApiKey)
     : new NoopLinearWriteClient();
 
@@ -99,12 +166,41 @@ export function createLinearGithubWebhookRouter(
   service: Pick<CorrelationService, 'correlatePullRequest'> = buildCorrelationService(),
   syncService: Pick<LinearSyncService, 'syncPrOpened'> = buildLinearSyncService(),
   webhookSecret = process.env.GITHUB_WEBHOOK_SECRET,
+  rateLimitConfig: LinearWebhookRateLimitConfig = buildDefaultRateLimitConfig(),
 ) {
   const router = Router();
+  const rateLimit = createRateLimiter(rateLimitConfig);
 
   router.post('/github-webhook', async (req, res) => {
     if (!webhookSecret) {
       res.status(500).json({ error: 'GITHUB_WEBHOOK_SECRET not configured' });
+      return;
+    }
+
+    const clientIp = getClientIp(req);
+    const rateLimitResult = rateLimit(clientIp);
+
+    if (rateLimitResult.limited) {
+      if (typeof rateLimitResult.retryAfterSeconds === 'number') {
+        res.setHeader('Retry-After', String(rateLimitResult.retryAfterSeconds));
+      }
+
+      logger.warn(
+        {
+          action: 'github_webhook_rate_limited',
+          metadata: {
+            clientIp,
+            maxRequests: rateLimitConfig.maxRequests,
+            windowMs: rateLimitConfig.windowMs,
+          },
+        },
+        'Linear GitHub webhook request was rate limited',
+      );
+
+      res.status(429).json({
+        error: 'Too many requests',
+        retryAfterSeconds: rateLimitResult.retryAfterSeconds,
+      });
       return;
     }
 

@@ -108,4 +108,66 @@ describe('Linear GitHub webhook route', () => {
     );
     expect(mockSyncService.syncPrOpened).toHaveBeenCalledTimes(1);
   });
+
+  it('rate limits excessive requests from the same IP', async () => {
+    const app = express();
+    app.use(
+      express.json({
+        verify: (req, _res, buf) => {
+          (req as unknown as { rawBody: string }).rawBody = buf.toString();
+        },
+      }),
+    );
+
+    const mockService = {
+      correlatePullRequest: vi.fn().mockResolvedValue({ matched: false, reason: 'no_identifier' }),
+    };
+    const mockSyncService = {
+      syncPrOpened: vi.fn().mockResolvedValue(undefined),
+    };
+
+    app.use(
+      '/api/linear-sync',
+      createLinearGithubWebhookRouter(
+        mockService,
+        mockSyncService,
+        'test-secret',
+        { maxRequests: 2, windowMs: 60_000, now: () => 1_700_000_000_000 },
+      ),
+    );
+
+    const payload = JSON.stringify({
+      action: 'opened',
+      pull_request: {
+        number: 777,
+        html_url: 'https://github.com/dcyfr/dcyfr-ai/pull/777',
+        title: '[DCYFR-777] test',
+        body: 'body',
+        head: { ref: 'feature/DCYFR-777-test' },
+      },
+      repository: {
+        name: 'dcyfr-ai',
+        owner: { login: 'dcyfr' },
+      },
+    });
+
+    const sendWebhook = () => request(app)
+      .post('/api/linear-sync/github-webhook')
+      .set('x-forwarded-for', '203.0.113.10')
+      .set('x-github-event', 'pull_request')
+      .set('x-hub-signature-256', sign(payload, 'test-secret'))
+      .set('content-type', 'application/json')
+      .send(payload);
+
+    const first = await sendWebhook();
+    const second = await sendWebhook();
+    const third = await sendWebhook();
+
+    expect(first.status).toBe(202);
+    expect(second.status).toBe(202);
+    expect(third.status).toBe(429);
+    expect(third.body.error).toBe('Too many requests');
+    expect(third.body.retryAfterSeconds).toBeGreaterThan(0);
+    expect(third.headers['retry-after']).toBeDefined();
+  });
 });
