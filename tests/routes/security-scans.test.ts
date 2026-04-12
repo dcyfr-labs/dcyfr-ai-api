@@ -11,9 +11,52 @@
  * - GET returns 400 for non-UUID IDs
  * - Error path: failed scan reaches terminal state
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
+
+// Stub out the external scan worker — not installed in this repo
+vi.mock('@dcyfr/ai/security/prompt-scan-worker', () => ({
+  executePromptScan: async (
+    input: { prompt: string },
+    _hooks: unknown,
+  ) => {
+    const isInjection = /ignore.*instructions|reveal.*system.*prompt/i.test(input.prompt);
+    if (isInjection) {
+      return {
+        success: true,
+        output: {
+          riskScore: 80,
+          severity: 'high',
+          safe: false,
+          remediationSummary: 'Severity: high — prompt injection pattern detected.',
+          attempts: 1,
+          findings: [
+            {
+              pattern: 'prompt_injection',
+              category: 'injection',
+              severity: 'high',
+              confidence: 0.95,
+              source: 'pattern',
+              details: 'Instruction override attempt',
+            },
+          ],
+        },
+      };
+    }
+    return {
+      success: true,
+      output: {
+        riskScore: 0,
+        severity: 'safe',
+        safe: true,
+        remediationSummary: '',
+        attempts: 1,
+        findings: [],
+      },
+    };
+  },
+}));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

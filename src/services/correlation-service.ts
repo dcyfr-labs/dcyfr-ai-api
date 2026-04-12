@@ -58,9 +58,16 @@ export class LinearGraphqlIssueResolver implements LinearIssueResolver {
   ) { }
 
   async findByIdentifier(identifier: string): Promise<LinearIssue | null> {
+    // Identifier format: TEAM_KEY-NUMBER (e.g. "DCYFR-123")
+    // IssueFilter does not expose `identifier` directly — split into team key + number.
+    const match = /^([A-Z]{2,12})-(\d{1,7})$/.exec(identifier);
+    if (!match) return null;
+    const teamKey = match[1]!;
+    const issueNumber = parseInt(match[2]!, 10);
+
     const query = `
-      query FindIssueByIdentifier($identifier: String!) {
-        issues(filter: { identifier: { eq: $identifier } }, first: 1) {
+      query FindIssueByTeamKeyAndNumber($teamKey: String!, $number: Float!) {
+        issues(filter: { team: { key: { eq: $teamKey } }, number: { eq: $number } }, first: 1) {
           nodes {
             id
             identifier
@@ -77,7 +84,7 @@ export class LinearGraphqlIssueResolver implements LinearIssueResolver {
         Authorization: this.apiKey,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query, variables: { identifier } }),
+      body: JSON.stringify({ query, variables: { teamKey, number: issueNumber } }),
     });
 
     const durationMs = Date.now() - startedAt;

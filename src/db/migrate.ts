@@ -52,6 +52,62 @@ export function migrate(sqliteDb: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS issue_mappings_created_at_idx
       ON issue_mappings(created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS sync_events (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      payload_hash TEXT NOT NULL,
+      correlation_key TEXT NOT NULL,
+      action TEXT NOT NULL,
+      status TEXT NOT NULL,
+      source TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      linked_mapping_id INTEGER REFERENCES issue_mappings(id) ON DELETE SET NULL,
+      error TEXT,
+      processed_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS dead_letter_events (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      error TEXT NOT NULL,
+      source TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      processed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS security_scans (
+      id TEXT PRIMARY KEY,
+      state TEXT NOT NULL DEFAULT 'queued',
+      prompt TEXT NOT NULL,
+      context TEXT,
+      options TEXT,
+      risk_score INTEGER,
+      severity TEXT,
+      safe INTEGER,
+      remediation_summary TEXT,
+      error_message TEXT,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      queued_at TEXT NOT NULL DEFAULT (datetime('now')),
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS scan_findings (
+      id TEXT PRIMARY KEY,
+      scan_id TEXT NOT NULL REFERENCES security_scans(id) ON DELETE CASCADE,
+      pattern TEXT NOT NULL,
+      category TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      confidence INTEGER NOT NULL,
+      source TEXT NOT NULL,
+      details TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   logger.info('Database migrations completed');
