@@ -1,7 +1,7 @@
 /**
  * Database schema - Drizzle ORM
  */
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
@@ -41,6 +41,49 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Post = typeof posts.$inferSelect;
 export type NewPost = typeof posts.$inferInsert;
+
+// ─── Linear ↔ GitHub Issue Mappings ─────────────────────────────────────────
+
+export const issueMappings = sqliteTable(
+  'issue_mappings',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    linearIssueId: text('linear_issue_id').notNull(),
+    linearIdentifier: text('linear_identifier').notNull(),
+    owner: text('owner').notNull(),
+    repo: text('repo').notNull(),
+    prNumber: integer('pr_number').notNull(),
+    prUrl: text('pr_url'),
+    source: text('source', { enum: ['branch', 'title', 'commit', 'body', 'manual'] })
+      .notNull()
+      .default('branch'),
+    confidence: integer('confidence').notNull().default(0),
+    syncStatus: text('sync_status', { enum: ['pending', 'synced', 'failed'] })
+      .notNull()
+      .default('pending'),
+    lastSyncAt: text('last_sync_at'),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at')
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    linearIdentifierIdx: index('issue_mappings_linear_identifier_idx').on(table.linearIdentifier),
+    repoPrIdx: index('issue_mappings_repo_pr_idx').on(table.owner, table.repo, table.prNumber),
+    createdAtIdx: index('issue_mappings_created_at_idx').on(table.createdAt),
+    uniqueLinearPr: uniqueIndex('issue_mappings_linear_pr_unique').on(
+      table.linearIssueId,
+      table.owner,
+      table.repo,
+      table.prNumber,
+    ),
+  }),
+);
+
+export type IssueMapping = typeof issueMappings.$inferSelect;
+export type NewIssueMapping = typeof issueMappings.$inferInsert;
 
 // ─── Security Scans ──────────────────────────────────────────────────────────
 

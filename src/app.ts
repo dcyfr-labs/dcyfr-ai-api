@@ -9,6 +9,7 @@ import { config } from './config/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { authRoutes, userRoutes, postRoutes, healthRoutes, webhookRoutes, deviceRoutes, securityScanRoutes } from './routes/index.js';
+import { createLinearGithubWebhookRouter } from './routes/linear/github-webhook.js';
 import { openApiSpec } from './openapi.js';
 
 export function createApp() {
@@ -20,7 +21,7 @@ export function createApp() {
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
       if (!origin) return callback(null, true);
-      
+
       const allowedOrigins = config.cors.origin;
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -51,6 +52,7 @@ export function createApp() {
   app.use('/api/devices', deviceRoutes);
   app.use('/api/security-scans', securityScanRoutes);
   app.use('/webhooks', webhookRoutes);
+  app.use('/api/linear-sync', createLinearGithubWebhookRouter());
 
   // ─── Error Handler (must be last) ─────────────────
   app.use(errorHandler);
