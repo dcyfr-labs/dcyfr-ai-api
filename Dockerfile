@@ -1,29 +1,28 @@
-FROM node:20-alpine AS base
+# Build base
+FROM node:22-bookworm-slim AS base
 WORKDIR /app
 
 # Install production dependencies (includes native better-sqlite3 compilation)
 FROM base AS deps
-RUN apk add --no-cache python3 make g++
-COPY package.json package-lock.json ./
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci --omit=dev
 
 # Build TypeScript
 FROM base AS builder
-RUN apk add --no-cache python3 make g++
-COPY package.json package-lock.json ./
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
 RUN npm run build
 
 # Production runner
-FROM base AS runner
+FROM gcr.io/distroless/nodejs22-debian12:nonroot AS runner
+WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 api
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
-USER api
 EXPOSE 3001
-CMD ["node", "dist/index.js"]
+CMD ["dist/index.js"]

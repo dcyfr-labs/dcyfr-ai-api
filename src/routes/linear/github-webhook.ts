@@ -111,6 +111,32 @@ function validateGitHubSignature(
   return crypto.timingSafeEqual(received, expected);
 }
 
+function resolveRawBody(req: Request): string {
+  const rawBodyValue = (req as unknown as { rawBody?: unknown }).rawBody;
+
+  if (typeof rawBodyValue === 'string') {
+    return rawBodyValue;
+  }
+
+  if (Buffer.isBuffer(rawBodyValue)) {
+    return rawBodyValue.toString();
+  }
+
+  if (typeof req.body === 'string') {
+    return req.body;
+  }
+
+  if (req.body === undefined || req.body === null) {
+    return '';
+  }
+
+  try {
+    return JSON.stringify(req.body);
+  } catch {
+    return '';
+  }
+}
+
 function toCorrelationEvent(payload: GitHubPullRequestPayload, eventId: string): PullRequestCorrelationEvent | null {
   const owner = payload.repository?.owner?.login;
   const repo = payload.repository?.name;
@@ -204,7 +230,7 @@ export function createLinearGithubWebhookRouter(
       return;
     }
 
-    const rawBody = (req as unknown as { rawBody?: string }).rawBody ?? JSON.stringify(req.body);
+    const rawBody = resolveRawBody(req);
     const signature = req.headers['x-hub-signature-256'] as string | undefined;
 
     if (!validateGitHubSignature(rawBody, signature, webhookSecret)) {

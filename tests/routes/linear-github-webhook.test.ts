@@ -170,4 +170,39 @@ describe('Linear GitHub webhook route', () => {
     expect(third.body.retryAfterSeconds).toBeGreaterThan(0);
     expect(third.headers['retry-after']).toBeDefined();
   });
+
+  it('handles non-json ping requests without crashing', async () => {
+    const app = express();
+    app.use(
+      express.json({
+        verify: (req, _res, buf) => {
+          (req as unknown as { rawBody: string }).rawBody = buf.toString();
+        },
+      }),
+    );
+
+    const mockService = {
+      correlatePullRequest: vi.fn().mockResolvedValue({ matched: false, reason: 'no_identifier' }),
+    };
+    const mockSyncService = {
+      syncPrOpened: vi.fn().mockResolvedValue(undefined),
+    };
+
+    app.use('/api/linear-sync', createLinearGithubWebhookRouter(mockService, mockSyncService, 'test-secret'));
+
+    const payload = '';
+
+    const res = await request(app)
+      .post('/api/linear-sync/github-webhook')
+      .set('x-github-event', 'ping')
+      .set('x-github-delivery', 'evt-ping')
+      .set('x-hub-signature-256', sign(payload, 'test-secret'))
+      .set('content-type', 'text/plain')
+      .send(payload);
+
+    expect(res.status).toBe(202);
+    expect(res.body).toEqual({ accepted: true, skipped: true, reason: 'unsupported_event_type' });
+    expect(mockService.correlatePullRequest).not.toHaveBeenCalled();
+    expect(mockSyncService.syncPrOpened).not.toHaveBeenCalled();
+  });
 });

@@ -41,6 +41,9 @@ export class LinearGraphqlWriteClient implements LinearWriteClient {
       query FindIssue($id: String!) {
         issue(id: $id) {
           id
+          team {
+            id
+          }
           labels {
             nodes {
               id
@@ -51,7 +54,12 @@ export class LinearGraphqlWriteClient implements LinearWriteClient {
       }
     `;
 
-    const issuePayload = await this.callLinear<{ issue?: { labels?: { nodes?: Array<{ id: string; name: string }> } } }>(
+    const issuePayload = await this.callLinear<{
+      issue?: {
+        team?: { id?: string };
+        labels?: { nodes?: Array<{ id: string; name: string }> };
+      };
+    }>(
       issueQuery,
       { id: issueId },
       'linear_issue_query',
@@ -62,16 +70,71 @@ export class LinearGraphqlWriteClient implements LinearWriteClient {
       return;
     }
 
-    const updateMutation = `
-      mutation UpdateIssueLabels($id: String!, $labelNames: [String!]!) {
-        issueUpdate(id: $id, input: { labelNames: $labelNames }) {
+    const teamId = issuePayload.issue?.team?.id;
+    if (!teamId) {
+      throw new Error('Linear issue missing team metadata for label assignment');
+    }
+
+    const teamLabelsQuery = `
+      query FindTeamLabels($teamId: String!) {
+        team(id: $teamId) {
+          labels(first: 250) {
+            nodes {
+              id
+              name
+            }
+          }
+        }
+      }
+    `;
+
+    const teamLabelPayload = await this.callLinear<{ team?: { labels?: { nodes?: Array<{ id: string; name: string }> } } }>(
+      teamLabelsQuery,
+      { teamId },
+      'linear_team_labels_query',
+    );
+
+    let labelId = teamLabelPayload.team?.labels?.nodes?.find(
+      (label) => label.name.toLowerCase() === labelName.toLowerCase(),
+    )?.id;
+
+    if (!labelId) {
+      const createLabelMutation = `
+        mutation CreateIssueLabel($input: IssueLabelCreateInput!) {
+          issueLabelCreate(input: $input) {
+            success
+            issueLabel {
+              id
+              name
+            }
+          }
+        }
+      `;
+
+      const createPayload = await this.callLinear<{
+        issueLabelCreate?: { success?: boolean; issueLabel?: { id?: string; name?: string } };
+      }>(
+        createLabelMutation,
+        { input: { teamId, name: labelName } },
+        'linear_issue_label_create',
+      );
+
+      labelId = createPayload.issueLabelCreate?.issueLabel?.id;
+
+      if (!labelId) {
+        throw new Error(`Failed to create Linear label '${labelName}'`);
+      }
+    }
+
+    const addLabelMutation = `
+      mutation AddIssueLabel($id: String!, $labelId: String!) {
+        issueAddLabel(id: $id, labelId: $labelId) {
           success
         }
       }
     `;
 
-    const labelNames = [...existing.map((label) => label.name), labelName];
-    await this.callLinear(updateMutation, { id: issueId, labelNames }, 'linear_issue_update_labels');
+    await this.callLinear(addLabelMutation, { id: issueId, labelId }, 'linear_issue_add_label');
   }
 
   private async callLinear<TData = unknown>(
