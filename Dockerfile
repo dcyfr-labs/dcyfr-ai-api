@@ -1,19 +1,21 @@
-FROM oven/bun:1-alpine@sha256:7ed9f74c326d1c260abe247ac423ccbf5ac92af62bb442d515d1f92f21e8ea9b AS base
+FROM node:20-alpine AS base
 WORKDIR /app
 
-# Install dependencies
+# Install production dependencies (includes native better-sqlite3 compilation)
 FROM base AS deps
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile --production
+RUN apk add --no-cache python3 make g++
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
-# Build
+# Build TypeScript
 FROM base AS builder
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
+RUN apk add --no-cache python3 make g++
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-RUN bun run build
+RUN npm run build
 
-# Production
+# Production runner
 FROM base AS runner
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
@@ -24,4 +26,4 @@ COPY --from=builder /app/package.json ./
 
 USER api
 EXPOSE 3001
-CMD ["bun", "dist/index.js"]
+CMD ["node", "dist/index.js"]

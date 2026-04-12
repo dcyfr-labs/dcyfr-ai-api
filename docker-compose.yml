@@ -12,6 +12,12 @@ services:
       # Production: https://www.dcyfr.ai,https://dcyfr-labs.vercel.app
       # Development: http://localhost:3000,http://localhost:3001
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000,http://localhost:3001}
+      # Linear / GitHub webhook
+      - LINEAR_API_KEY=${LINEAR_API_KEY}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+      - DRY_RUN=${DRY_RUN:-true}
+      - LINEAR_WEBHOOK_RATE_LIMIT_MAX=${LINEAR_WEBHOOK_RATE_LIMIT_MAX:-120}
+      - LINEAR_WEBHOOK_RATE_LIMIT_WINDOW_MS=${LINEAR_WEBHOOK_RATE_LIMIT_WINDOW_MS:-60000}
     volumes:
       - api-data:/app/data
     restart: unless-stopped
