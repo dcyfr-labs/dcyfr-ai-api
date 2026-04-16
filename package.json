@@ -91,12 +91,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dcyfr/dcyfr-ai-api"
+    "url": "https://github.com/dcyfr-labs/dcyfr-ai-api"
   },
   "bugs": {
-    "url": "https://github.com/dcyfr/dcyfr-ai-api/issues"
+    "url": "https://github.com/dcyfr-labs/dcyfr-ai-api/issues"
   },
-  "homepage": "https://github.com/dcyfr/dcyfr-ai-api#readme",
+  "homepage": "https://github.com/dcyfr-labs/dcyfr-ai-api#readme",
   "overrides": {
     "esbuild": "0.25.0"
   }
