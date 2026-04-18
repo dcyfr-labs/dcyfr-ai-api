@@ -4,13 +4,13 @@ WORKDIR /app
 # Install production dependencies (includes native better-sqlite3 compilation)
 FROM base AS deps
 RUN apk add --no-cache python3 make g++
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci --omit=dev
 
 # Build TypeScript
 FROM base AS builder
 RUN apk add --no-cache python3 make g++
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
 RUN npm run build
