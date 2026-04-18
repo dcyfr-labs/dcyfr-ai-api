@@ -50,12 +50,6 @@
     "express": "^5.1.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-<<<<<<< HEAD
-    "next": "16.2.4",
-||||||| parent of 9bdc956 (fix(deps): resolve package-lock.json drift blocking Docker builds)
-    "next": "16.2.3",
-=======
->>>>>>> 9bdc956 (fix(deps): resolve package-lock.json drift blocking Docker builds)
     "pino": "^10.3.1",
     "pino-pretty": "^13.0.0",
     "swagger-ui-express": "^5.0.1",
