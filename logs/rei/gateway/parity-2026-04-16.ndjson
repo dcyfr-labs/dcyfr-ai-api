@@ -1,0 +1,45 @@
+{
+  "ts": "2026-04-16T04:15:15.191Z",
+  "windowStart": "2026-04-15T00:00:00.000Z",
+  "windowEnd": "2026-04-16T00:00:00.000Z",
+  "thresholdPct": 5,
+  "channels": [
+    {
+      "channel": "discord",
+      "gateway": {
+        "messageCount": 0,
+        "errorCount": 0,
+        "userCount": 0
+      },
+      "legacy": {
+        "messageCount": 0,
+        "errorCount": 0
+      },
+      "divergence": {
+        "messagePct": 0,
+        "errorPct": 0,
+        "exceeded": false
+      },
+      "outcome": "PASS"
+    },
+    {
+      "channel": "imessage",
+      "gateway": {
+        "messageCount": 0,
+        "errorCount": 0,
+        "userCount": 0
+      },
+      "legacy": {
+        "messageCount": 0,
+        "errorCount": 0
+      },
+      "divergence": {
+        "messagePct": 0,
+        "errorPct": 0,
+        "exceeded": false
+      },
+      "outcome": "PASS"
+    }
+  ],
+  "outcome": "PASS"
+}

@@ -16,6 +16,7 @@ import {
   LinearSyncService,
   NoopLinearWriteClient,
 } from '../../services/linear-sync-service.js';
+import { DeadLetterService } from '../../services/dead-letter-service.js';
 import { MappingStore } from '../../services/mapping-store.js';
 
 interface GitHubPullRequestPayload {
@@ -111,6 +112,8 @@ function validateGitHubSignature(
   return crypto.timingSafeEqual(received, expected);
 }
 
+const PROCESSED_ACTIONS = new Set(['opened', 'synchronize']);
+
 function toCorrelationEvent(payload: GitHubPullRequestPayload, eventId: string): PullRequestCorrelationEvent | null {
   const owner = payload.repository?.owner?.login;
   const repo = payload.repository?.name;
@@ -134,16 +137,50 @@ function toCorrelationEvent(payload: GitHubPullRequestPayload, eventId: string):
   };
 }
 
+/** Fetch the first-line of each commit message for the given PR. Returns [] on any error. */
+async function fetchPrCommitMessages(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  githubToken: string,
+): Promise<string[]> {
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits?per_page=100`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+  } catch {
+    return [];
+  }
+  if (!response.ok) return [];
+
+  const commits = (await response.json()) as Array<{ commit?: { message?: string } }>;
+  return commits
+    .map((c) => (c.commit?.message ?? '').split('\n')[0]?.trim() ?? '')
+    .filter(Boolean);
+}
+
+function isRealApiKey(value: string | undefined): value is string {
+  if (!value) return false;
+  if (value.startsWith('replace-with-')) return false;
+  if (value.startsWith('op://')) return false;
+  return true;
+}
+
 function buildCorrelationService() {
   const mappingStore = new MappingStore(db);
   const linearApiKey = process.env.LINEAR_API_KEY;
-  const isRealKey = linearApiKey && !linearApiKey.startsWith('replace-with-');
 
-  if (!isRealKey) {
+  if (!isRealApiKey(linearApiKey)) {
     logger.warn({ action: 'linear_key_check' }, 'LINEAR_API_KEY is absent or a placeholder — Linear lookups will be no-ops');
   }
 
-  const resolver = isRealKey
+  const resolver = isRealApiKey(linearApiKey)
     ? new LinearGraphqlIssueResolver(linearApiKey)
     : new NoopLinearIssueResolver();
 
@@ -152,14 +189,54 @@ function buildCorrelationService() {
 
 function buildLinearSyncService() {
   const linearApiKey = process.env.LINEAR_API_KEY;
-  const isRealKey = linearApiKey && !linearApiKey.startsWith('replace-with-');
   const dryRun = (process.env.DRY_RUN ?? 'true').toLowerCase() !== 'false';
 
-  const client = isRealKey
+  const client = isRealApiKey(linearApiKey)
     ? new LinearGraphqlWriteClient(linearApiKey)
     : new NoopLinearWriteClient();
 
   return new LinearSyncService(client, dryRun);
+}
+
+function buildDeadLetterService() {
+  return new DeadLetterService(db);
+}
+
+async function processPullRequestEvent(
+  event: PullRequestCorrelationEvent,
+  service: Pick<CorrelationService, 'correlatePullRequest'>,
+  syncService: Pick<LinearSyncService, 'syncPrOpened'>,
+): Promise<void> {
+  const result = await service.correlatePullRequest(event);
+
+  if (result.matched && result.identifier && result.linearIssueId) {
+    await syncService.syncPrOpened({
+      eventId: event.eventId,
+      issueId: result.linearIssueId,
+      issueIdentifier: result.identifier,
+      owner: event.owner,
+      repo: event.repo,
+      prNumber: event.prNumber,
+      prUrl: event.prUrl,
+    });
+  }
+
+  logger.info(
+    {
+      timestamp: new Date().toISOString(),
+      eventId: event.eventId,
+      action: 'github_webhook_ingest',
+      status: 'processed',
+      metadata: {
+        matched: result.matched,
+        identifier: result.identifier,
+        source: result.source,
+        confidence: result.confidence,
+        mappingId: result.mappingId,
+      },
+    },
+    'GitHub webhook processed',
+  );
 }
 
 export function createLinearGithubWebhookRouter(
@@ -167,6 +244,7 @@ export function createLinearGithubWebhookRouter(
   syncService: Pick<LinearSyncService, 'syncPrOpened'> = buildLinearSyncService(),
   webhookSecret = process.env.GITHUB_WEBHOOK_SECRET,
   rateLimitConfig: LinearWebhookRateLimitConfig = buildDefaultRateLimitConfig(),
+  deadLetterService: Pick<DeadLetterService, 'record' | 'getPending' | 'getByEventId' | 'markProcessed'> = buildDeadLetterService(),
 ) {
   const router = Router();
   const rateLimit = createRateLimiter(rateLimitConfig);
@@ -227,55 +305,114 @@ export function createLinearGithubWebhookRouter(
       return;
     }
 
+    if (!PROCESSED_ACTIONS.has(event.action)) {
+      res.status(202).json({ accepted: true, skipped: true, reason: 'unsupported_action' });
+      return;
+    }
+
     // Accept quickly; process asynchronously to keep webhook handler responsive.
     res.status(202).json({ accepted: true, eventId });
 
     setImmediate(() => {
-      service
-        .correlatePullRequest(event)
-        .then(async (result) => {
-          if (result.matched && result.identifier && result.linearIssueId) {
-            await syncService.syncPrOpened({
-              eventId,
-              issueId: result.linearIssueId,
-              issueIdentifier: result.identifier,
-              owner: event.owner,
-              repo: event.repo,
-              prNumber: event.prNumber,
-              prUrl: event.prUrl,
-            });
-          }
+      const githubToken = process.env.GITHUB_TOKEN;
+      const enrichPromise = isRealApiKey(githubToken)
+        ? fetchPrCommitMessages(event.owner, event.repo, event.prNumber, githubToken).then(
+            (msgs) => { event.commits = msgs; },
+          )
+        : Promise.resolve();
 
-          logger.info(
-            {
-              timestamp: new Date().toISOString(),
-              eventId,
-              action: 'github_webhook_ingest',
-              status: 'processed',
-              metadata: {
-                matched: result.matched,
-                identifier: result.identifier,
-                source: result.source,
-                confidence: result.confidence,
-                mappingId: result.mappingId,
-              },
-            },
-            'GitHub webhook processed',
-          );
-        })
+      enrichPromise
+        .then(() => processPullRequestEvent(event, service, syncService))
         .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+
+          void deadLetterService.record({
+            eventId,
+            payload: rawBody,
+            error: message,
+            source: 'github',
+            eventType: 'pull_request',
+          }).catch((deadLetterError: unknown) => {
+            logger.error(
+              {
+                timestamp: new Date().toISOString(),
+                eventId,
+                action: 'github_webhook_dead_letter_record',
+                status: 'failed',
+                metadata: {
+                  error: deadLetterError instanceof Error ? deadLetterError.message : String(deadLetterError),
+                },
+              },
+              'Failed to persist dead-letter event',
+            );
+          });
+
           logger.error(
             {
               timestamp: new Date().toISOString(),
               eventId,
               action: 'github_webhook_ingest',
               status: 'failed',
-              metadata: { error: error instanceof Error ? error.message : String(error) },
+              metadata: { error: message },
             },
             'Failed to process GitHub webhook',
           );
         });
     });
+  });
+
+  router.get('/dead-letter', async (_req, res) => {
+    const events = await deadLetterService.getPending();
+
+    res.json({
+      data: events.map((event) => ({
+        id: event.id,
+        eventId: event.eventId,
+        source: event.source,
+        eventType: event.eventType,
+        error: event.error,
+        createdAt: event.createdAt,
+      })),
+    });
+  });
+
+  router.post('/replay/:eventId', async (req, res) => {
+    const eventId = req.params['eventId'];
+    if (!eventId) {
+      res.status(400).json({ error: 'Missing eventId' });
+      return;
+    }
+
+    const deadLetterEvent = await deadLetterService.getByEventId(eventId);
+    if (!deadLetterEvent) {
+      res.status(404).json({ error: 'Dead-letter event not found' });
+      return;
+    }
+
+    if (deadLetterEvent.source !== 'github' || deadLetterEvent.eventType !== 'pull_request') {
+      res.status(400).json({ error: 'Unsupported dead-letter event type' });
+      return;
+    }
+
+    let payload: GitHubPullRequestPayload;
+    try {
+      payload = JSON.parse(deadLetterEvent.payload) as GitHubPullRequestPayload;
+    } catch {
+      res.status(400).json({ error: 'Dead-letter payload is not valid JSON' });
+      return;
+    }
+
+    const correlationEvent = toCorrelationEvent(payload, eventId);
+
+    if (!correlationEvent) {
+      res.status(400).json({ error: 'Dead-letter payload missing required pull request metadata' });
+      return;
+    }
+
+    await processPullRequestEvent(correlationEvent, service, syncService);
+    await deadLetterService.markProcessed(eventId);
+
+    res.json({ replayed: true, eventId });
   });
 
   return router;

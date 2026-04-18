@@ -10,6 +10,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { authRoutes, userRoutes, postRoutes, healthRoutes, webhookRoutes, deviceRoutes, securityScanRoutes } from './routes/index.js';
 import { createLinearGithubWebhookRouter } from './routes/linear/github-webhook.js';
+import { createReviewGithubWebhookRouter } from './routes/review/pr-webhook.js';
 import { openApiSpec } from './openapi.js';
 
 export function createApp() {
@@ -53,6 +54,7 @@ export function createApp() {
   app.use('/api/security-scans', securityScanRoutes);
   app.use('/webhooks', webhookRoutes);
   app.use('/api/linear-sync', createLinearGithubWebhookRouter());
+  app.use('/api/review', createReviewGithubWebhookRouter());
 
   // ─── Error Handler (must be last) ─────────────────
   app.use(errorHandler);

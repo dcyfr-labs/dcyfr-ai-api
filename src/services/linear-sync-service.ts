@@ -37,41 +37,73 @@ export class LinearGraphqlWriteClient implements LinearWriteClient {
   }
 
   async addLabel(issueId: string, labelName: string): Promise<void> {
+    // Fetch the issue's current labels and its team's label catalog in one round-trip.
     const issueQuery = `
-      query FindIssue($id: String!) {
+      query GetIssueLabelsAndTeam($id: String!) {
         issue(id: $id) {
-          id
-          labels {
-            nodes {
-              id
-              name
-            }
+          labels { nodes { id name } }
+          team {
+            id
+            labels { nodes { id name } }
           }
         }
       }
     `;
 
-    const issuePayload = await this.callLinear<{ issue?: { labels?: { nodes?: Array<{ id: string; name: string }> } } }>(
-      issueQuery,
-      { id: issueId },
-      'linear_issue_query',
-    );
+    const data = await this.callLinear<{
+      issue?: {
+        labels?: { nodes?: Array<{ id: string; name: string }> };
+        team?: { id: string; labels?: { nodes?: Array<{ id: string; name: string }> } };
+      };
+    }>(issueQuery, { id: issueId }, 'linear_issue_team_query');
 
-    const existing = issuePayload.issue?.labels?.nodes ?? [];
-    if (existing.some((label) => label.name.toLowerCase() === labelName.toLowerCase())) {
+    // Bail early if the issue already carries this label.
+    const currentLabels = data.issue?.labels?.nodes ?? [];
+    if (currentLabels.some((l) => l.name.toLowerCase() === labelName.toLowerCase())) {
       return;
     }
 
-    const updateMutation = `
-      mutation UpdateIssueLabels($id: String!, $labelNames: [String!]!) {
-        issueUpdate(id: $id, input: { labelNames: $labelNames }) {
+    // Look for an existing team-level label with the requested name.
+    const teamLabels = data.issue?.team?.labels?.nodes ?? [];
+    let labelId = teamLabels.find((l) => l.name.toLowerCase() === labelName.toLowerCase())?.id;
+
+    // If the label doesn't exist on the team yet, create it.
+    if (!labelId) {
+      const teamId = data.issue?.team?.id;
+      if (!teamId) {
+        logger.warn({ action: 'linear_label_create', issueId, labelName }, 'Cannot create label: team ID not resolved');
+        return;
+      }
+
+      const createMutation = `
+        mutation CreateIssueLabel($input: IssueLabelCreateInput!) {
+          issueLabelCreate(input: $input) {
+            issueLabel { id }
+          }
+        }
+      `;
+
+      const createData = await this.callLinear<{
+        issueLabelCreate?: { issueLabel?: { id: string } };
+      }>(createMutation, { input: { name: labelName, teamId } }, 'linear_label_create');
+
+      labelId = createData.issueLabelCreate?.issueLabel?.id;
+      if (!labelId) {
+        logger.warn({ action: 'linear_label_create', issueId, labelName }, 'issueLabelCreate returned no ID');
+        return;
+      }
+    }
+
+    // Attach the label to the issue using issueAddLabel.
+    const addMutation = `
+      mutation AddLabelToIssue($id: String!, $labelId: String!) {
+        issueAddLabel(id: $id, labelId: $labelId) {
           success
         }
       }
     `;
 
-    const labelNames = [...existing.map((label) => label.name), labelName];
-    await this.callLinear(updateMutation, { id: issueId, labelNames }, 'linear_issue_update_labels');
+    await this.callLinear(addMutation, { id: issueId, labelId }, 'linear_issue_add_label');
   }
 
   private async callLinear<TData = unknown>(

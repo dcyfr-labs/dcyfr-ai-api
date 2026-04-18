@@ -109,6 +109,83 @@ describe('Linear GitHub webhook route', () => {
     expect(mockSyncService.syncPrOpened).toHaveBeenCalledTimes(1);
   });
 
+  it('skips unsupported PR actions (closed, labeled, etc.)', async () => {
+    const app = express();
+    app.use(
+      express.json({
+        verify: (req, _res, buf) => {
+          (req as unknown as { rawBody: string }).rawBody = buf.toString();
+        },
+      }),
+    );
+
+    const mockService = {
+      correlatePullRequest: vi.fn().mockResolvedValue({ matched: false }),
+    };
+    const mockSyncService = { syncPrOpened: vi.fn().mockResolvedValue(undefined) };
+
+    app.use('/api/linear-sync', createLinearGithubWebhookRouter(mockService, mockSyncService, 'test-secret'));
+
+    for (const action of ['closed', 'labeled', 'unlabeled', 'reopened', 'review_requested']) {
+      const payload = JSON.stringify({
+        action,
+        pull_request: { number: 1, html_url: 'https://github.com/dcyfr/dcyfr-ai-api/pull/1', title: 'test', body: '', head: { ref: 'main' } },
+        repository: { name: 'dcyfr-ai-api', owner: { login: 'dcyfr' } },
+      });
+
+      const res = await request(app)
+        .post('/api/linear-sync/github-webhook')
+        .set('x-github-event', 'pull_request')
+        .set('x-hub-signature-256', sign(payload, 'test-secret'))
+        .set('content-type', 'application/json')
+        .send(payload);
+
+      expect(res.status, `action="${action}" should be skipped`).toBe(202);
+      expect(res.body.skipped, `action="${action}" should mark skipped`).toBe(true);
+      expect(res.body.reason).toBe('unsupported_action');
+    }
+
+    expect(mockService.correlatePullRequest).not.toHaveBeenCalled();
+  });
+
+  it('processes synchronize action as well as opened', async () => {
+    const app = express();
+    app.use(
+      express.json({
+        verify: (req, _res, buf) => {
+          (req as unknown as { rawBody: string }).rawBody = buf.toString();
+        },
+      }),
+    );
+
+    const mockService = {
+      correlatePullRequest: vi.fn().mockResolvedValue({ matched: false, reason: 'no_identifier' }),
+    };
+    const mockSyncService = { syncPrOpened: vi.fn().mockResolvedValue(undefined) };
+    app.use('/api/linear-sync', createLinearGithubWebhookRouter(mockService, mockSyncService, 'test-secret'));
+
+    const payload = JSON.stringify({
+      action: 'synchronize',
+      pull_request: { number: 99, html_url: 'https://github.com/dcyfr/dcyfr-ai-api/pull/99', title: 'sync push', body: '', head: { ref: 'feature/no-key' } },
+      repository: { name: 'dcyfr-ai-api', owner: { login: 'dcyfr' } },
+    });
+
+    const res = await request(app)
+      .post('/api/linear-sync/github-webhook')
+      .set('x-github-event', 'pull_request')
+      .set('x-github-delivery', 'evt-sync-99')
+      .set('x-hub-signature-256', sign(payload, 'test-secret'))
+      .set('content-type', 'application/json')
+      .send(payload);
+
+    expect(res.status).toBe(202);
+    expect(res.body.accepted).toBe(true);
+    expect(res.body.skipped).toBeUndefined();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockService.correlatePullRequest).toHaveBeenCalledTimes(1);
+  });
+
   it('rate limits excessive requests from the same IP', async () => {
     const app = express();
     app.use(

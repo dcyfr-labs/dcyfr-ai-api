@@ -1,5 +1,86 @@
-import { describe, expect, it, vi } from 'vitest';
-import { LinearSyncService, type LinearWriteClient } from '../../src/services/linear-sync-service.js';
+import { describe, expect, it, vi, afterEach } from 'vitest';
+import { LinearGraphqlWriteClient, LinearSyncService, type LinearWriteClient } from '../../src/services/linear-sync-service.js';
+
+// ─── LinearGraphqlWriteClient.addLabel ───────────────────────────────────────
+
+describe('LinearGraphqlWriteClient.addLabel', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function mockFetch(responses: Array<{ data: unknown }>) {
+    let call = 0;
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+      const body = responses[call++] ?? { data: {} };
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(body),
+      });
+    }));
+  }
+
+  it('skips addLabel call when issue already has the label', async () => {
+    mockFetch([{
+      data: {
+        issue: {
+          labels: { nodes: [{ id: 'lbl_1', name: 'GitHub PR' }] },
+          team: { id: 'team_1', labels: { nodes: [{ id: 'lbl_1', name: 'GitHub PR' }] } },
+        },
+      },
+    }]);
+
+    const client = new LinearGraphqlWriteClient('test-key');
+    await client.addLabel('issue_1', 'GitHub PR');
+
+    const fetchMock = vi.mocked(fetch);
+    // Only one call — the team/label query. No issueAddLabel call.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses issueAddLabel when team label exists', async () => {
+    mockFetch([
+      // query: issue has no label yet, team has the label
+      { data: { issue: { labels: { nodes: [] }, team: { id: 'team_1', labels: { nodes: [{ id: 'lbl_existing', name: 'GitHub PR' }] } } } } },
+      // issueAddLabel mutation
+      { data: { issueAddLabel: { success: true } } },
+    ]);
+
+    const client = new LinearGraphqlWriteClient('test-key');
+    await client.addLabel('issue_1', 'GitHub PR');
+
+    const fetchMock = vi.mocked(fetch);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    const addCall = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string) as { variables: { labelId: string } };
+    expect(addCall.variables.labelId).toBe('lbl_existing');
+  });
+
+  it('creates the label when not found on team, then calls issueAddLabel', async () => {
+    mockFetch([
+      // query: no current label, team has no "GitHub PR" label
+      { data: { issue: { labels: { nodes: [] }, team: { id: 'team_42', labels: { nodes: [] } } } } },
+      // issueLabelCreate
+      { data: { issueLabelCreate: { issueLabel: { id: 'lbl_new' } } } },
+      // issueAddLabel
+      { data: { issueAddLabel: { success: true } } },
+    ]);
+
+    const client = new LinearGraphqlWriteClient('test-key');
+    await client.addLabel('issue_1', 'GitHub PR');
+
+    const fetchMock = vi.mocked(fetch);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    const createCall = JSON.parse(fetchMock.mock.calls[1]![1]!.body as string) as { variables: { input: { name: string; teamId: string } } };
+    expect(createCall.variables.input.name).toBe('GitHub PR');
+    expect(createCall.variables.input.teamId).toBe('team_42');
+
+    const addCall = JSON.parse(fetchMock.mock.calls[2]![1]!.body as string) as { variables: { labelId: string } };
+    expect(addCall.variables.labelId).toBe('lbl_new');
+  });
+});
+
+// ─── LinearSyncService ───────────────────────────────────────────────────────
 
 describe('LinearSyncService', () => {
   it('logs dry-run without executing writes', async () => {
