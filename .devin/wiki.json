@@ -1,0 +1,8 @@
+{
+  "repo_notes": [
+    {
+      "content": "API backend for DCYFR AI services. Document the REST API endpoints, authentication mechanisms, request/response formats, and how the API layer integrates with the core AI framework and external services.",
+      "author": "DCYFR Engineering"
+    }
+  ]
+}
