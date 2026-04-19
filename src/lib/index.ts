@@ -7,3 +7,8 @@ export {
   ForbiddenError,
   ConflictError,
 } from './errors.js';
+export {
+  registry as metricsRegistry,
+  funnelWebhookRequests,
+  type FunnelWebhookResult,
+} from './metrics.js';

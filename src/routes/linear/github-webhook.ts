@@ -5,6 +5,7 @@ import { Router, type Request } from 'express';
 import crypto from 'node:crypto';
 import { db } from '../../db/connection.js';
 import { logger } from '../../lib/logger.js';
+import { funnelWebhookRequests, type FunnelWebhookResult } from '../../lib/metrics.js';
 import {
   CorrelationService,
   LinearGraphqlIssueResolver,
@@ -250,7 +251,15 @@ export function createLinearGithubWebhookRouter(
   const rateLimit = createRateLimiter(rateLimitConfig);
 
   router.post('/github-webhook', async (req, res) => {
+    // Single entry point for Funnel-exposed webhook telemetry. Every branch
+    // below calls recordResult() exactly once — keep it that way so the
+    // counter is a reliable divisor for alert rules in Phase 6.2.
+    const recordResult = (result: FunnelWebhookResult): void => {
+      funnelWebhookRequests.inc({ route: 'linear_github_webhook', result });
+    };
+
     if (!webhookSecret) {
+      recordResult('missing_secret');
       res.status(500).json({ error: 'GITHUB_WEBHOOK_SECRET not configured' });
       return;
     }
@@ -275,6 +284,7 @@ export function createLinearGithubWebhookRouter(
         'Linear GitHub webhook request was rate limited',
       );
 
+      recordResult('rate_limited');
       res.status(429).json({
         error: 'Too many requests',
         retryAfterSeconds: rateLimitResult.retryAfterSeconds,
@@ -286,12 +296,14 @@ export function createLinearGithubWebhookRouter(
     const signature = req.headers['x-hub-signature-256'] as string | undefined;
 
     if (!validateGitHubSignature(rawBody, signature, webhookSecret)) {
+      recordResult('invalid_signature');
       res.status(401).json({ error: 'Invalid signature' });
       return;
     }
 
     const githubEvent = req.headers['x-github-event'];
     if (githubEvent !== 'pull_request') {
+      recordResult('unsupported_event');
       res.status(202).json({ accepted: true, skipped: true, reason: 'unsupported_event_type' });
       return;
     }
@@ -301,16 +313,19 @@ export function createLinearGithubWebhookRouter(
     const event = toCorrelationEvent(payload, eventId);
 
     if (!event) {
+      recordResult('missing_metadata');
       res.status(400).json({ error: 'Missing required pull request metadata' });
       return;
     }
 
     if (!PROCESSED_ACTIONS.has(event.action)) {
+      recordResult('unsupported_action');
       res.status(202).json({ accepted: true, skipped: true, reason: 'unsupported_action' });
       return;
     }
 
     // Accept quickly; process asynchronously to keep webhook handler responsive.
+    recordResult('accepted');
     res.status(202).json({ accepted: true, eventId });
 
     setImmediate(() => {
