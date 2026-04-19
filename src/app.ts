@@ -12,6 +12,7 @@ import { authRoutes, userRoutes, postRoutes, healthRoutes, webhookRoutes, device
 import { createLinearGithubWebhookRouter } from './routes/linear/github-webhook.js';
 import { createReviewGithubWebhookRouter } from './routes/review/pr-webhook.js';
 import { openApiSpec } from './openapi.js';
+import { metricsRegistry } from './lib/index.js';
 
 export function createApp() {
   const app = express();
@@ -44,6 +45,19 @@ export function createApp() {
 
   // ─── API Documentation ────────────────────────────
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+
+  // ─── Observability ────────────────────────────────
+  // Prometheus scrape endpoint. Exposed internally on the tailnet only —
+  // it is NOT part of the Funnel manifest (see workbench-secure-leverage
+  // Phase 1.2 one-path-only policy). Tailscale ACLs are the access gate.
+  app.get('/metrics', async (_req, res, next) => {
+    try {
+      res.set('Content-Type', metricsRegistry.contentType);
+      res.end(await metricsRegistry.metrics());
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // ─── Routes ───────────────────────────────────────
   app.use('/health', healthRoutes);
