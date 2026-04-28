@@ -183,3 +183,109 @@ describe('applyConfig', () => {
     expect(result).toHaveLength(1);
   });
 });
+
+// ─── fetchReviewerConfig ─────────────────────────────────────────────────────
+
+import { vi, beforeEach, afterEach } from 'vitest';
+import { fetchReviewerConfig } from '../../../src/services/review/reviewer-config.js';
+
+describe('fetchReviewerConfig', () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  it('returns defaults when fetch throws (network error)', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('ECONNRESET'));
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('info');
+    expect(cfg.skipPatterns).toEqual([]);
+  });
+
+  it('returns defaults on 404 (file absent)', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: 404,
+      ok: false,
+    });
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('info');
+  });
+
+  it('returns defaults on non-2xx, non-404 response (e.g., 500)', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: 500,
+      ok: false,
+    });
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('info');
+  });
+
+  it('returns defaults when response.json() throws', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: () => Promise.reject(new Error('parse error')),
+    });
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('info');
+  });
+
+  it('returns defaults when encoding is not base64', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve({ encoding: 'utf-8', content: 'plain text' }),
+    });
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('info');
+  });
+
+  it('returns defaults when base64 content is invalid JSON', async () => {
+    const garbage = Buffer.from('not json {').toString('base64');
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve({ encoding: 'base64', content: garbage }),
+    });
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('info');
+  });
+
+  it('parses a valid base64-encoded config', async () => {
+    const config = {
+      severityThreshold: 'error',
+      skipPatterns: ['**/*.min.js'],
+      skipRules: ['insecure-random'],
+    };
+    const content = Buffer.from(JSON.stringify(config)).toString('base64');
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve({ encoding: 'base64', content }),
+    });
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('error');
+    expect(cfg.skipPatterns).toEqual(['**/*.min.js']);
+    expect(cfg.skipRules).toEqual(['insecure-random']);
+  });
+
+  it('strips newlines from base64 content before decoding', async () => {
+    // GitHub API returns base64 with embedded newlines every 60 chars
+    const config = { severityThreshold: 'warning' };
+    const raw = Buffer.from(JSON.stringify(config)).toString('base64');
+    const withNewlines = raw.replace(/(.{4})/g, '$1\n');
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve({ encoding: 'base64', content: withNewlines }),
+    });
+    const cfg = await fetchReviewerConfig('o', 'r', 'token');
+    expect(cfg.severityThreshold).toBe('warning');
+  });
+});
