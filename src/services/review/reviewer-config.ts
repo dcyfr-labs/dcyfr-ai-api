@@ -58,11 +58,16 @@ export function parseReviewerConfig(raw: unknown): ReviewerConfig {
  * Supports: `*.ts`, `**\/*.test.ts`, `src\/**`, `?oo.ts`.
  */
 function globToRegex(pattern: string): RegExp {
+  // Sentinel for `**` so the next pass that substitutes single `*` doesn't
+  // re-match it. A NUL byte was the prior choice but SonarCloud's
+  // "Remove control character" rule rejects it; this string token works
+  // identically and is unlikely to collide with any real glob input.
+  const DOUBLESTAR_SENTINEL = '__GLOB_DOUBLE_STAR__';
   const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '\x00')
+    .replace(/\*\*/g, DOUBLESTAR_SENTINEL)
     .replace(/\*/g, '[^/]*')
-    .replace(/\x00/g, '.*')
+    .replace(new RegExp(DOUBLESTAR_SENTINEL, 'g'), '.*')
     .replace(/\?/g, '[^/]');
   return new RegExp(`(^|/)${escaped}$`);
 }
