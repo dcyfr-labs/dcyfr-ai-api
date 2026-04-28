@@ -87,3 +87,89 @@ describe('CorrelationService', () => {
     expect(result).toMatchObject({ matched: false, reason: 'no_identifier' });
   });
 });
+
+import { vi } from 'vitest';
+import { LinearGraphqlIssueResolver, NoopLinearIssueResolver } from '../../src/services/correlation-service.js';
+
+describe('NoopLinearIssueResolver', () => {
+  it('always returns null', async () => {
+    const resolver = new NoopLinearIssueResolver();
+    expect(await resolver.findByIdentifier('DCYFR-1')).toBeNull();
+    expect(await resolver.findByIdentifier('anything')).toBeNull();
+  });
+});
+
+describe('LinearGraphqlIssueResolver', () => {
+  const originalFetch = globalThis.fetch;
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  it('returns null for an identifier that does not match TEAM-NUMBER format', async () => {
+    const resolver = new LinearGraphqlIssueResolver('api-key');
+    expect(await resolver.findByIdentifier('not-a-key')).toBeNull();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('returns null on non-200 HTTP response', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
+    const resolver = new LinearGraphqlIssueResolver('api-key');
+    expect(await resolver.findByIdentifier('DCYFR-42')).toBeNull();
+  });
+
+  it('returns null when the response includes GraphQL errors', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ errors: [{ message: 'access denied' }] }),
+    });
+    const resolver = new LinearGraphqlIssueResolver('api-key');
+    expect(await resolver.findByIdentifier('DCYFR-42')).toBeNull();
+  });
+
+  it('returns the first issue node on a successful match', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          data: { issues: { nodes: [{ id: 'lin_1', identifier: 'DCYFR-42', title: 'Bug fix' }] } },
+        }),
+    });
+    const resolver = new LinearGraphqlIssueResolver('api-key');
+    const issue = await resolver.findByIdentifier('DCYFR-42');
+    expect(issue).toEqual({ id: 'lin_1', identifier: 'DCYFR-42', title: 'Bug fix' });
+  });
+
+  it('returns null when no issue nodes are returned', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: { issues: { nodes: [] } } }),
+    });
+    const resolver = new LinearGraphqlIssueResolver('api-key');
+    expect(await resolver.findByIdentifier('DCYFR-99')).toBeNull();
+  });
+
+  it('uses the provided endpoint override', async () => {
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: { issues: { nodes: [] } } }),
+    });
+    const resolver = new LinearGraphqlIssueResolver('api-key', 'https://custom.example/graphql');
+    await resolver.findByIdentifier('DCYFR-1');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://custom.example/graphql',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+});
