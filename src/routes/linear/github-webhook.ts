@@ -19,6 +19,7 @@ import {
 } from '../../services/linear-sync-service.js';
 import { DeadLetterService } from '../../services/dead-letter-service.js';
 import { MappingStore } from '../../services/mapping-store.js';
+import { isRepoAllowed } from '../../services/review/repo-allowlist.js';
 
 interface GitHubPullRequestPayload {
   action?: string;
@@ -121,6 +122,14 @@ function toCorrelationEvent(payload: GitHubPullRequestPayload, eventId: string):
   const prNumber = payload.pull_request?.number;
 
   if (!owner || !repo || typeof prNumber !== 'number') {
+    return null;
+  }
+
+  // SSRF defense: reject (owner, repo) not in REVIEW_ALLOWED_REPOS before
+  // the downstream fetch (line 151) — closes CodeQL js/request-forgery on
+  // routes/linear/github-webhook.ts.
+  if (!isRepoAllowed(owner, repo)) {
+    logger.warn({ owner, repo, prNumber, eventId }, 'linear-webhook: repo not in REVIEW_ALLOWED_REPOS — rejecting');
     return null;
   }
 

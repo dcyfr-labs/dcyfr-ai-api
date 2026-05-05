@@ -50,4 +50,24 @@ export const config = {
   log: {
     level: process.env.LOG_LEVEL || 'info',
   },
+
+  /**
+   * Repo allowlist for the GitHub PR review service.
+   *
+   * Closes CodeQL js/request-forgery — owner/repo from webhook payloads is
+   * user-controlled. Without an allowlist, an attacker installing the webhook
+   * on their own repo would get this service to fetch + post comments using
+   * our GitHub token.
+   *
+   * Format: comma-separated entries. Each entry is either:
+   *   - exact pair: "dcyfr-labs/dcyfr-labs"
+   *   - org wildcard: "dcyfr-labs/*"  (any repo under that owner)
+   *
+   * Empty allowlist in production rejects ALL webhook events. In dev/test, an
+   * empty allowlist permits any repo (warns once at startup).
+   */
+  reviewAllowedRepos: (process.env.REVIEW_ALLOWED_REPOS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
 } as const;
