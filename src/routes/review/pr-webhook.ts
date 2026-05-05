@@ -6,6 +6,7 @@
 import { Router, type Request } from 'express';
 import crypto from 'node:crypto';
 import { logger } from '../../lib/logger.js';
+import { isRepoAllowed } from '../../services/review/repo-allowlist.js';
 import { parseDiff } from '../../services/review/diff-analyzer.js';
 import {
   fetchPullRequestDiff,
@@ -179,6 +180,16 @@ export function createReviewGithubWebhookRouter(
 
     if (!owner || !repo || typeof prNumber !== 'number') {
       res.status(400).json({ error: 'Missing required pull request metadata' });
+      return;
+    }
+
+    // SSRF defense: reject (owner, repo) pairs not in the allowlist before
+    // any fetch using our GitHub token. Closes CodeQL js/request-forgery on
+    // github-review-service.ts (postReviewComments, fetchPullRequestDiff)
+    // and reviewer-config.ts (fetchReviewerConfig).
+    if (!isRepoAllowed(owner, repo)) {
+      logger.warn({ owner, repo, prNumber }, 'review-webhook: repo not in REVIEW_ALLOWED_REPOS — rejecting');
+      res.status(403).json({ error: 'Repository not authorized for review service' });
       return;
     }
 
