@@ -3,6 +3,7 @@
  */
 import { Router } from 'express';
 import { validate } from '../middleware/validate.js';
+import { rateLimit, AUTH_RATE_LIMIT, ONE_MINUTE } from '../middleware/rate-limit.js';
 import { registerSchema, loginSchema } from '../schemas/index.js';
 import { UserService } from '../services/user-service.js';
 import { generateToken } from '../services/auth-service.js';
@@ -12,6 +13,10 @@ import { db } from '../db/connection.js';
 
 const router = Router();
 const userService = new UserService(db);
+
+// Rate-limit all auth endpoints (login, register) — 60 req/min/IP by default.
+// Closes CodeQL js/missing-rate-limiting on this router.
+router.use(rateLimit(AUTH_RATE_LIMIT, ONE_MINUTE));
 
 /**
  * POST /auth/register
