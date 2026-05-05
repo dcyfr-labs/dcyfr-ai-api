@@ -18,6 +18,14 @@ services:
       - DRY_RUN=${DRY_RUN:-true}
       - LINEAR_WEBHOOK_RATE_LIMIT_MAX=${LINEAR_WEBHOOK_RATE_LIMIT_MAX:-120}
       - LINEAR_WEBHOOK_RATE_LIMIT_WINDOW_MS=${LINEAR_WEBHOOK_RATE_LIMIT_WINDOW_MS:-60000}
+      # Review-service SSRF allowlist (closes CodeQL js/request-forgery).
+      # Empty in production rejects all webhooks (fail-closed). Default is
+      # the dcyfr-labs org wildcard; tighten to specific repos if needed.
+      - REVIEW_ALLOWED_REPOS=${REVIEW_ALLOWED_REPOS:-dcyfr-labs/*}
+      # HTTP-API rate limits (defaults: 60/min auth+writes, 300/min reads)
+      - RATE_LIMIT_AUTH_MAX=${RATE_LIMIT_AUTH_MAX:-60}
+      - RATE_LIMIT_READ_MAX=${RATE_LIMIT_READ_MAX:-300}
+      - RATE_LIMIT_WRITE_MAX=${RATE_LIMIT_WRITE_MAX:-60}
     volumes:
       - api-data:/app/data
     restart: unless-stopped
