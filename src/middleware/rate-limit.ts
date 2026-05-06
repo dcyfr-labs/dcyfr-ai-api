@@ -30,6 +30,10 @@ export function getClientIp(req: Request): string {
   return req.ip || 'unknown';
 }
 
+// Registry of every limiter's reset hook, so test setup can clear all
+// in-memory state between tests without leaking limiter handles to callers.
+const LIMITER_RESETS = new Set<() => void>();
+
 /**
  * In-memory sliding-window rate limiter. Maps client IP → array of request
  * timestamps within the window. Returns whether the IP is currently over
@@ -37,6 +41,7 @@ export function getClientIp(req: Request): string {
  */
 export function createRateLimiter(maxRequests: number, windowMs: number) {
   const requestsByIp = new Map<string, number[]>();
+  LIMITER_RESETS.add(() => requestsByIp.clear());
   return (clientIp: string): { limited: boolean; retryAfterSeconds?: number } => {
     const now = Date.now();
     const minTimestamp = now - windowMs;
@@ -82,6 +87,16 @@ export function rateLimit(maxRequests: number, windowMs: number) {
     }
     next();
   };
+}
+
+/**
+ * Test-only: clear in-memory state for every limiter created via
+ * createRateLimiter / rateLimit. Routes register limiters at module-load
+ * time, so without this hook the singletons accumulate request history
+ * across the entire test run and trip 429s mid-suite.
+ */
+export function __resetAllRateLimiters(): void {
+  for (const reset of LIMITER_RESETS) reset();
 }
 
 /** Standard policy presets (sliding 1-minute window). */
