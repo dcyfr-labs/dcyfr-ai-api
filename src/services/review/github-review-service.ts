@@ -4,6 +4,15 @@
  */
 import { logger } from '../../lib/logger.js';
 
+const GITHUB_OWNER_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
+const GITHUB_REPO_RE = /^[A-Za-z0-9_.-]{1,100}$/;
+
+function assertGitHubSlug(owner: string, repo: string): void {
+  if (!GITHUB_OWNER_RE.test(owner) || !GITHUB_REPO_RE.test(repo)) {
+    throw new Error('Invalid GitHub owner/repo slug');
+  }
+}
+
 export interface ReviewComment {
   path: string;
   line: number;
@@ -27,7 +36,8 @@ function buildCommentBody(comment: ReviewComment): string {
 }
 
 async function getHeadCommitSha(owner: string, repo: string, prNumber: number, token: string): Promise<string> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
+  assertGitHubSlug(owner, repo);
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}`;
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -52,7 +62,8 @@ async function postSingleComment(
   commitSha: string,
   token: string,
 ): Promise<void> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/comments`;
+  assertGitHubSlug(owner, repo);
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/comments`;
   const payload: GitHubPullRequestReviewCommentPayload = {
     body: buildCommentBody(comment),
     commit_id: commitSha,
@@ -84,7 +95,8 @@ export async function fetchPullRequestDiff(
   prNumber: number,
   token: string,
 ): Promise<string> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
+  assertGitHubSlug(owner, repo);
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}`;
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
