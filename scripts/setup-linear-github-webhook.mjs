@@ -84,7 +84,11 @@ async function main() {
 
   if (dryRun) {
     console.log('[setup-linear-github-webhook] DRY_RUN=true, no webhook created.');
-    console.log(JSON.stringify(payload, null, 2));
+    // Redact the HMAC secret before printing — payload.config.secret is the raw
+    // GITHUB_WEBHOOK_SECRET and must never land in logs or terminal scrollback.
+    const safe = JSON.parse(JSON.stringify(payload));
+    if (safe?.config?.secret) safe.config.secret = '[REDACTED]';
+    console.log(JSON.stringify(safe, null, 2));
     return;
   }
 

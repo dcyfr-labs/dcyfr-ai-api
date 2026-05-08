@@ -154,7 +154,10 @@ async function fetchPrCommitMessages(
   prNumber: number,
   githubToken: string,
 ): Promise<string[]> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits?per_page=100`;
+  if (!/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(owner) || !/^[A-Za-z0-9_.-]{1,100}$/.test(repo)) {
+    return [];
+  }
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/commits?per_page=100`;
   let response: Response;
   try {
     response = await fetch(url, {

@@ -6,6 +6,9 @@
 import { logger } from '../../lib/logger.js';
 import { type ReviewComment } from './github-review-service.js';
 
+const GITHUB_OWNER_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
+const GITHUB_REPO_RE = /^[A-Za-z0-9_.-]{1,100}$/;
+
 export interface ReviewerConfig {
   /** Minimum severity to report. Findings below this level are suppressed. */
   severityThreshold: ReviewComment['severity'];
@@ -110,7 +113,11 @@ export async function fetchReviewerConfig(
   repo: string,
   token: string,
 ): Promise<ReviewerConfig> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/.dcyfr/reviewer.json`;
+  if (!GITHUB_OWNER_RE.test(owner) || !GITHUB_REPO_RE.test(repo)) {
+    logger.warn({ owner, repo }, 'reviewer-config: invalid owner/repo slug, using defaults');
+    return { ...DEFAULTS };
+  }
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/.dcyfr/reviewer.json`;
 
   let response: Response;
   try {
