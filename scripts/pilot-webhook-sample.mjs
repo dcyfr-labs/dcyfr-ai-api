@@ -23,7 +23,7 @@ function sign(payload) {
   return 'sha256=' + crypto.createHmac('sha256', SECRET).update(payload).digest('hex');
 }
 
-async function sendEvent(payload, label) {
+async function _sendEvent(payload, label) {
   const body = JSON.stringify(payload);
   const signature = sign(body);
   const eventId = crypto.randomUUID();
@@ -154,7 +154,7 @@ async function runPilot() {
       body,
     });
     const latencyMs = Date.now() - start;
-    const responseText = await res.text().catch(() => '');
+    const _responseText = await res.text().catch(() => '');
 
     const row = { status: res.status, latencyMs, label, eventId: eventId.slice(0, 8) };
     results.push(row);
@@ -167,7 +167,7 @@ async function runPilot() {
   // ── Summary ────────────────────────────────────────────────────────────────
   const accepted = results.filter((r) => r.status === 202).length;
   const rejected = results.filter((r) => r.status === 401).length;
-  const skipped = results.filter((r) => r.status === 202 && r.label.includes('skipped')).length;
+  const _skipped = results.filter((r) => r.status === 202 && r.label.includes('skipped')).length;
   const latencies = results.map((r) => r.latencyMs);
   const p50 = latencies.sort((a, b) => a - b)[Math.floor(latencies.length * 0.5)];
   const p95 = latencies[Math.floor(latencies.length * 0.95)];
