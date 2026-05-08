@@ -4,13 +4,22 @@
  */
 import { logger } from '../../lib/logger.js';
 
+const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_OWNER_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const GITHUB_REPO_RE = /^[A-Za-z0-9_.-]{1,100}$/;
 
-function assertGitHubSlug(owner: string, repo: string): void {
+/**
+ * Build a GitHub API URL from a validated owner/repo + path. Throws on bad
+ * slug. Constructs via `new URL(path, base)` so the host is bound to the
+ * literal `api.github.com` — CodeQL recognises this pattern as a SSRF
+ * sanitiser since no caller-controlled value can change the host.
+ */
+function buildGhUrl(owner: string, repo: string, suffix: string): string {
   if (!GITHUB_OWNER_RE.test(owner) || !GITHUB_REPO_RE.test(repo)) {
     throw new Error('Invalid GitHub owner/repo slug');
   }
+  const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}${suffix}`;
+  return new URL(path, GITHUB_API_BASE).toString();
 }
 
 export interface ReviewComment {
@@ -36,8 +45,7 @@ function buildCommentBody(comment: ReviewComment): string {
 }
 
 async function getHeadCommitSha(owner: string, repo: string, prNumber: number, token: string): Promise<string> {
-  assertGitHubSlug(owner, repo);
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}`;
+  const url = buildGhUrl(owner, repo, `/pulls/${prNumber}`);
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -62,8 +70,7 @@ async function postSingleComment(
   commitSha: string,
   token: string,
 ): Promise<void> {
-  assertGitHubSlug(owner, repo);
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/comments`;
+  const url = buildGhUrl(owner, repo, `/pulls/${prNumber}/comments`);
   const payload: GitHubPullRequestReviewCommentPayload = {
     body: buildCommentBody(comment),
     commit_id: commitSha,
@@ -95,8 +102,7 @@ export async function fetchPullRequestDiff(
   prNumber: number,
   token: string,
 ): Promise<string> {
-  assertGitHubSlug(owner, repo);
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}`;
+  const url = buildGhUrl(owner, repo, `/pulls/${prNumber}`);
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,

@@ -84,10 +84,12 @@ async function main() {
 
   if (dryRun) {
     console.log('[setup-linear-github-webhook] DRY_RUN=true, no webhook created.');
-    // Redact the HMAC secret before printing — payload.config.secret is the raw
-    // GITHUB_WEBHOOK_SECRET and must never land in logs or terminal scrollback.
-    const safe = JSON.parse(JSON.stringify(payload));
-    if (safe?.config?.secret) safe.config.secret = '[REDACTED]';
+    // Build a redacted shape via spread; never JSON.stringify the original
+    // payload (CodeQL js/clear-text-logging tracks taint through stringify).
+    const safe = {
+      ...payload,
+      config: { ...payload.config, secret: '[REDACTED]' },
+    };
     console.log(JSON.stringify(safe, null, 2));
     return;
   }

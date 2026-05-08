@@ -6,6 +6,7 @@
 import { logger } from '../../lib/logger.js';
 import { type ReviewComment } from './github-review-service.js';
 
+const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_OWNER_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const GITHUB_REPO_RE = /^[A-Za-z0-9_.-]{1,100}$/;
 
@@ -117,7 +118,10 @@ export async function fetchReviewerConfig(
     logger.warn({ owner, repo }, 'reviewer-config: invalid owner/repo slug, using defaults');
     return { ...DEFAULTS };
   }
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/.dcyfr/reviewer.json`;
+  // URL constructor with hardcoded base — host is bound to api.github.com,
+  // CodeQL recognises this as a SSRF sanitiser.
+  const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/.dcyfr/reviewer.json`;
+  const url = new URL(path, GITHUB_API_BASE).toString();
 
   let response: Response;
   try {

@@ -91,7 +91,10 @@ router.post('/approval-notification', async (req: Request, res: Response) => {
   try {
     const tokens = await tokenManager.getActiveTokens(payload.agentId);
     if (tokens.length === 0) {
-      console.warn(`[webhooks] No active APNS tokens for agentId=${safeForLog(payload.agentId)}`);
+      // JSON.stringify quotes + escapes the value, recognised by CodeQL as
+      // a log-injection sanitiser. safeForLog truncates and visualises any
+      // non-printable bytes that survived JSON quoting.
+      console.warn(`[webhooks] No active APNS tokens for agentId=${JSON.stringify(safeForLog(payload.agentId))}`);
       return;
     }
 
@@ -101,7 +104,7 @@ router.post('/approval-notification', async (req: Request, res: Response) => {
       body: notificationBody,
       data: { approvalId: payload.approvalId, agentId: payload.agentId },
     });
-    console.info(`[webhooks] Dispatched ${tokens.length} notification(s) for approvalId=${safeForLog(payload.approvalId)}`);
+    console.info(`[webhooks] Dispatched ${tokens.length} notification(s) for approvalId=${JSON.stringify(safeForLog(payload.approvalId))}`);
   } catch (err) {
     console.error('[webhooks] Failed to dispatch notifications:', err);
   }

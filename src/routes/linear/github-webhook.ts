@@ -157,7 +157,9 @@ async function fetchPrCommitMessages(
   if (!/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(owner) || !/^[A-Za-z0-9_.-]{1,100}$/.test(repo)) {
     return [];
   }
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/commits?per_page=100`;
+  // URL constructor with hardcoded base binds host to api.github.com.
+  const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/commits?per_page=100`;
+  const url = new URL(path, 'https://api.github.com').toString();
   let response: Response;
   try {
     response = await fetch(url, {
