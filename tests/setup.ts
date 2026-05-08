@@ -5,20 +5,26 @@ import { beforeAll, afterAll, beforeEach } from 'vitest';
 import { rmSync, existsSync } from 'node:fs';
 import { sqliteDb } from '../src/db/connection.js';
 import { migrate } from '../src/db/migrate.js';
+import { __resetAllRateLimiters } from '../src/middleware/rate-limit.js';
 
 // Run migrations before all tests
 beforeAll(() => {
   migrate(sqliteDb);
 });
 
-// Clean database before each test
+// Clean database + rate-limit state before each test
 beforeEach(() => {
   // Clear all tables
   const tables = sqliteDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as Array<{ name: string }>;
-  
+
   tables.forEach((table) => {
     sqliteDb.prepare(`DELETE FROM ${table.name}`).run();
   });
+
+  // Clear in-memory rate-limit state. Limiters are created at module-load
+  // (e.g., posts/users/auth routes), so without this reset the budget bleeds
+  // across tests and beforeEach POSTs start hitting 429 mid-suite.
+  __resetAllRateLimiters();
 });
 
 // Clean up test databases after all tests
