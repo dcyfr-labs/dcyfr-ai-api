@@ -157,12 +157,17 @@ async function fetchPrCommitMessages(
   if (!/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(owner) || !/^[A-Za-z0-9_.-]{1,100}$/.test(repo)) {
     return [];
   }
-  // URL constructor with hardcoded base binds host to api.github.com.
   const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/commits?per_page=100`;
-  const url = new URL(path, 'https://api.github.com').toString();
+  const parsedUrl = new URL(path, 'https://api.github.com');
+  // SSRF barrier: any reflection or path-traversal in `owner`/`repo` that
+  // could shift the request off api.github.com fails this equality check.
+  // Closes CodeQL js/request-forgery alert #2.
+  if (parsedUrl.origin !== 'https://api.github.com') {
+    return [];
+  }
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch(parsedUrl, {
       headers: {
         Authorization: `Bearer ${githubToken}`,
         Accept: 'application/vnd.github+json',
