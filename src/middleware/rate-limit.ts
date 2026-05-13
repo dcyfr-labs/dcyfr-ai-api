@@ -1,21 +1,21 @@
 /**
- * Rate-limit middleware (in-memory, per-IP, sliding-window).
+ * Rate-limit middleware (per-IP, sliding-window via express-rate-limit).
  *
  * Closes CodeQL js/missing-rate-limiting findings on auth/posts/users routes.
  *
- * Limits configured via the `rateLimit()` factory at route registration time.
- * Standard policy across this service:
- *   - Auth endpoints (login, register, password reset): 60 req/min/IP
+ * Standard policy:
+ *   - Auth endpoints (login, register): 60 req/min/IP
  *   - Read endpoints (GET): 300 req/min/IP
- *   - Write endpoints (POST/PATCH/DELETE on resources): 60 req/min/IP
+ *   - Write endpoints (POST/PATCH/DELETE): 60 req/min/IP
  *
  * Override via env: RATE_LIMIT_AUTH_MAX, RATE_LIMIT_READ_MAX, RATE_LIMIT_WRITE_MAX.
  *
  * Note: existing webhook routes (review/pr-webhook.ts, linear/github-webhook.ts)
- * have their own local createRateLimiter implementations with different shapes.
+ * have their own local rate-limiter implementations with different shapes.
  * Not refactored here — out of scope. This file is for the new HTTP-API routes.
  */
 import type { Request, Response, NextFunction } from 'express';
+import rateLimitLib, { MemoryStore, type RateLimitRequestHandler } from 'express-rate-limit';
 
 /**
  * Extract the client IP, preferring X-Forwarded-For (first hop) when present
@@ -30,70 +30,49 @@ export function getClientIp(req: Request): string {
   return req.ip || 'unknown';
 }
 
-// Registry of every limiter's reset hook, so test setup can clear all
-// in-memory state between tests without leaking limiter handles to callers.
+// Registry of every limiter created via `rateLimit()` so test setup can
+// reset their in-memory state between tests. Without this hook the
+// singletons accumulate request history across the test run and trip
+// 429s mid-suite.
 const LIMITER_RESETS = new Set<() => void>();
-
-/**
- * In-memory sliding-window rate limiter. Maps client IP → array of request
- * timestamps within the window. Returns whether the IP is currently over
- * the budget along with a Retry-After hint.
- */
-export function createRateLimiter(maxRequests: number, windowMs: number) {
-  const requestsByIp = new Map<string, number[]>();
-  LIMITER_RESETS.add(() => requestsByIp.clear());
-  return (clientIp: string): { limited: boolean; retryAfterSeconds?: number } => {
-    const now = Date.now();
-    const minTimestamp = now - windowMs;
-    const active = (requestsByIp.get(clientIp) ?? []).filter((t) => t > minTimestamp);
-    if (active.length >= maxRequests) {
-      requestsByIp.set(clientIp, active);
-      const oldest = active[0] ?? now;
-      return {
-        limited: true,
-        retryAfterSeconds: Math.max(1, Math.ceil((windowMs - (now - oldest)) / 1000)),
-      };
-    }
-    active.push(now);
-    requestsByIp.set(clientIp, active);
-    return { limited: false };
-  };
-}
 
 /**
  * Express middleware that applies a per-IP rate limit. Use as router-level
  * or per-route middleware:
  *
  *   router.post('/login', rateLimit(60, 60_000), validate({ body }), handler);
- *
- * Or apply at router level for all routes underneath:
- *
- *   router.use(rateLimit(300, 60_000));
  */
-export function rateLimit(maxRequests: number, windowMs: number) {
-  const limiter = createRateLimiter(maxRequests, windowMs);
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const clientIp = getClientIp(req);
-    const result = limiter(clientIp);
-    if (result.limited) {
-      if (result.retryAfterSeconds !== undefined) {
-        res.setHeader('Retry-After', String(result.retryAfterSeconds));
-      }
+export function rateLimit(maxRequests: number, windowMs: number): RateLimitRequestHandler {
+  const store = new MemoryStore();
+  const limiter = rateLimitLib({
+    windowMs,
+    limit: maxRequests,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    store,
+    keyGenerator: (req: Request) => getClientIp(req),
+    handler: (_req: Request, res: Response, _next: NextFunction, options) => {
+      const retryAfterSeconds = Math.max(1, Math.ceil(options.windowMs / 1000));
+      res.setHeader('Retry-After', String(retryAfterSeconds));
       res.status(429).json({
         error: 'Too many requests',
-        retryAfterSeconds: result.retryAfterSeconds,
+        retryAfterSeconds,
       });
-      return;
-    }
-    next();
-  };
+    },
+  });
+  LIMITER_RESETS.add(() => store.resetAll());
+  return limiter;
 }
 
 /**
  * Test-only: clear in-memory state for every limiter created via
- * createRateLimiter / rateLimit. Routes register limiters at module-load
- * time, so without this hook the singletons accumulate request history
- * across the entire test run and trip 429s mid-suite.
+ * `rateLimit`. Routes register limiters at module-load time, so without
+ * this hook the singletons accumulate request history across the entire
+ * test run and trip 429s mid-suite.
+ *
+ * Note: express-rate-limit's MemoryStore doesn't expose a global clear,
+ * so we replace the underlying store on each registered limiter via the
+ * same factory pattern we recorded above.
  */
 export function __resetAllRateLimiters(): void {
   for (const reset of LIMITER_RESETS) reset();
