@@ -15,7 +15,11 @@
  * Not refactored here — out of scope. This file is for the new HTTP-API routes.
  */
 import type { Request, Response, NextFunction } from 'express';
-import rateLimitLib, { MemoryStore, type RateLimitRequestHandler } from 'express-rate-limit';
+import rateLimitLib, {
+  MemoryStore,
+  ipKeyGenerator,
+  type RateLimitRequestHandler,
+} from 'express-rate-limit';
 
 /**
  * Extract the client IP, preferring X-Forwarded-For (first hop) when present
@@ -50,7 +54,7 @@ export function rateLimit(maxRequests: number, windowMs: number): RateLimitReque
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     store,
-    keyGenerator: (req: Request) => getClientIp(req),
+    keyGenerator: (req: Request) => ipKeyGenerator(getClientIp(req)),
     handler: (_req: Request, res: Response, _next: NextFunction, options) => {
       const retryAfterSeconds = Math.max(1, Math.ceil(options.windowMs / 1000));
       res.setHeader('Retry-After', String(retryAfterSeconds));
