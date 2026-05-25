@@ -11,12 +11,17 @@
  *  - Expired after DEVICE_TOKEN_TTL_DAYS (default 90)
  */
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = process.env.APNS_DB_PATH ?? path.join(__dirname, '../../../apns-tokens.db');
+// Default resolves to `<repo>/data/apns-tokens.db` in both dev (`src/services/`
+// → `../../data/`) and prod (`dist/services/` → `../../data/`). The previous
+// `../../../` default escaped one level too far and wrote the DB into the repo's
+// parent directory.
+const DB_PATH = process.env.APNS_DB_PATH ?? path.join(__dirname, '../../data/apns-tokens.db');
 const DEVICE_TOKEN_TTL_DAYS = 90;
 const APNS_ENABLED = process.env.APNS_ENABLED === 'true';
 
@@ -40,6 +45,9 @@ export class ApnsTokenManager {
   private db: Database.Database;
 
   constructor() {
+    if (DB_PATH !== ':memory:') {
+      fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+    }
     this.db = new Database(DB_PATH);
     this.db.pragma('journal_mode = WAL');
     this.migrate();
