@@ -5,18 +5,18 @@
   status: active
   name: dcyfr-ai-api
   description: Production-ready REST API starter template with Express 5, Drizzle ORM, JWT, and OpenAPI
-  last_validated: 2026-03-29
+  last_validated: 2026-07-11
 -->
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dcyfr-labs/dcyfr-ai-api)
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-24+-green?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5.0-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
 [![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=flat-square&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white)](https://swagger.io/specification/)
-[![Template](https://img.shields.io/badge/Template-Starter-blue?style=flat-square&logo=github)](https://github.com/dcyfr)
-[![Sponsor](https://img.shields.io/badge/sponsor-30363D?style=flat-square&logo=GitHub-Sponsors&logoColor=#EA4AAA)](https://github.com/sponsors/dcyfr)
+[![Template](https://img.shields.io/badge/Template-Starter-blue?style=flat-square&logo=github)](https://github.com/dcyfr-labs)
+[![Sponsor](https://img.shields.io/badge/sponsor-30363D?style=flat-square&logo=GitHub-Sponsors&logoColor=EA4AAA)](https://github.com/sponsors/dcyfr)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 Production-ready REST API starter template built with Express 5, Drizzle ORM, JWT authentication, and OpenAPI documentation.
@@ -29,7 +29,6 @@ Production-ready REST API starter template built with Express 5, Drizzle ORM, JW
 
 - **DCYFR** is a registered trademark of DCYFR Labs.
 - Primary domain: [www.dcyfr.ai](https://www.dcyfr.ai)
-- Trademark guidance: [../TRADEMARK.md](../TRADEMARK.md)
 - Licensing details: [LICENSE](./LICENSE)
 
 ---
@@ -38,7 +37,7 @@ Production-ready REST API starter template built with Express 5, Drizzle ORM, JW
 
 ```bash
 # Clone template
-npx degit dcyfr/dcyfr-ai-api my-api
+npx degit dcyfr-labs/dcyfr-ai-api my-api
 cd my-api
 
 # Install and start
@@ -52,12 +51,12 @@ npm run dev
 
 ## 🧭 Related Packages
 
-| Package                                  | Purpose                  | Type        |
-| ---------------------------------------- | ------------------------ | ----------- |
-| [@dcyfr/ai](../dcyfr-ai)                 | Core AI framework        | npm package |
-| [@dcyfr/ai-nodejs](../dcyfr-ai-nodejs)   | Node.js starter template | Template    |
-| [@dcyfr/ai-graphql](../dcyfr-ai-graphql) | GraphQL API template     | Template    |
-| [dcyfr-labs](../dcyfr-labs)              | Production Next.js app   | Application |
+| Package                                                            | Purpose                  | Type        |
+| ------------------------------------------------------------------ | ------------------------ | ----------- |
+| [@dcyfr/ai](https://github.com/dcyfr-labs/dcyfr-ai)                 | Core AI framework        | npm package |
+| [@dcyfr/ai-nodejs](https://github.com/dcyfr-labs/dcyfr-ai-nodejs)   | Node.js starter template | Template    |
+| [@dcyfr/ai-graphql](https://github.com/dcyfr-labs/dcyfr-ai-graphql) | GraphQL API template     | Template    |
+| [dcyfr-labs](https://github.com/dcyfr-labs/dcyfr-labs)              | Production Next.js app   | Application |
 
 ---
 
@@ -66,15 +65,15 @@ npm run dev
 | Category       | Technology               | Version   |
 | -------------- | ------------------------ | --------- |
 | **Framework**  | Express                  | 5.x       |
-| **Language**   | TypeScript               | 5.7+      |
-| **ORM**        | Drizzle ORM              | 0.38+     |
+| **Language**   | TypeScript               | 6.0+      |
+| **ORM**        | Drizzle ORM              | 0.45+     |
 | **Database**   | SQLite (better-sqlite3)  | —         |
 | **Auth**       | JWT (jsonwebtoken)       | 9.x       |
-| **Validation** | Zod                      | 3.24+     |
+| **Validation** | Zod                      | 4.4+      |
 | **Docs**       | Swagger UI (OpenAPI 3.0) | —         |
-| **Logging**    | Pino                     | 9.x       |
+| **Logging**    | Pino                     | 10.x      |
 | **Security**   | Helmet + CORS            | —         |
-| **Testing**    | Vitest + Supertest       | 2.1 / 7.x |
+| **Testing**    | Vitest + Supertest       | 4.x / 7.x |
 
 ## Quick Start
 
@@ -124,6 +123,22 @@ See [`examples/README.md`](examples/README.md) for runnable examples, prerequisi
 | `PATCH`  | `/api/posts/:id`     | JWT (owner) | Update post         |
 | `DELETE` | `/api/posts/:id`     | JWT (owner) | Delete post         |
 
+### Optional modules
+
+These route families ship with the template and are wired in `src/app.ts`; they power APNS push notifications, security scanning, and the Linear/GitHub webhook integrations:
+
+| Method   | Path                              | Auth              | Description                              |
+| -------- | --------------------------------- | ----------------- | ---------------------------------------- |
+| `POST`   | `/api/devices/register`           | —                 | Register APNS device token               |
+| `DELETE` | `/api/devices/:token`             | —                 | Remove APNS device token                 |
+| `POST`   | `/api/security-scans`             | —                 | Queue a security scan (202 + scanId)     |
+| `GET`    | `/api/security-scans/:id`         | —                 | Poll scan state / results                |
+| `POST`   | `/webhooks/approval-notification` | HMAC (Inngest)    | Inngest agent.completed → APNS push      |
+| `POST`   | `/api/linear-sync/github-webhook` | HMAC (GitHub)     | Linear ↔ GitHub issue sync webhook       |
+| `GET`    | `/api/linear-sync/dead-letter`    | —                 | List dead-lettered sync events           |
+| `POST`   | `/api/linear-sync/replay/:eventId`| —                 | Replay a dead-lettered sync event        |
+| `POST`   | `/api/review/github-webhook`      | HMAC (GitHub)     | PR security-review webhook               |
+
 API documentation available at [http://localhost:3001/docs](http://localhost:3001/docs) (Swagger UI).
 
 ## Project Structure
@@ -140,26 +155,37 @@ dcyfr-ai-api/
 │   │   ├── connection.ts     # Database connection
 │   │   ├── schema.ts         # Drizzle schema (users, posts)
 │   │   ├── migrate.ts        # SQL migrations
+│   │   ├── migrations/       # SQL migration files
 │   │   └── seed.ts           # Seed data
 │   ├── lib/
 │   │   ├── errors.ts         # Error classes (AppError, NotFound, etc.)
-│   │   └── logger.ts         # Pino logger
+│   │   ├── logger.ts         # Pino logger
+│   │   └── metrics.ts        # Prometheus metrics (prom-client)
 │   ├── middleware/
 │   │   ├── auth.ts           # JWT + API key auth
 │   │   ├── error-handler.ts  # Global error handler
+│   │   ├── rate-limit.ts     # Rate limiting (express-rate-limit)
 │   │   ├── request-logger.ts # Request logging
 │   │   └── validate.ts       # Zod validation
 │   ├── routes/
 │   │   ├── auth.ts           # Auth routes
+│   │   ├── devices.ts        # APNS device registration
 │   │   ├── health.ts         # Health check
+│   │   ├── linear/           # Linear ↔ GitHub sync webhook
 │   │   ├── posts.ts          # Post CRUD
-│   │   └── users.ts          # User CRUD
+│   │   ├── review/           # PR security-review webhook
+│   │   ├── security-scans.ts # Security scan queue/poll
+│   │   ├── users.ts          # User CRUD
+│   │   └── webhooks.ts       # Inngest → APNS notifications
 │   ├── schemas/
 │   │   └── index.ts          # Zod validation schemas
-│   └── services/
-│       ├── auth-service.ts   # JWT + bcrypt
-│       ├── post-service.ts   # Post CRUD logic
-│       └── user-service.ts   # User CRUD logic
+│   ├── services/
+│   │   ├── auth-service.ts   # JWT + bcrypt
+│   │   ├── post-service.ts   # Post CRUD logic
+│   │   ├── user-service.ts   # User CRUD logic
+│   │   ├── review/           # Diff/security analysis for PR reviews
+│   │   └── ...               # APNS, Linear sync, scans, dead-letter
+│   └── types/                # Ambient type declarations
 ├── tests/
 │   ├── setup.ts
 │   ├── helpers.ts
@@ -168,6 +194,9 @@ dcyfr-ai-api/
 │   ├── routes/
 │   ├── schemas/
 │   └── services/
+├── docs/                     # API.md, DEPLOYMENT.md, SECURITY.md
+├── examples/                 # basic-usage, custom-route, database, middleware
+├── scripts/                  # native sqlite rebuild, webhook setup helpers
 ├── Dockerfile
 ├── docker-compose.yml
 └── drizzle.config.ts
@@ -223,16 +252,40 @@ const user = db.select().from(users).where(eq(users.id, 1)).get();
 
 ## Environment Variables
 
-| Variable         | Description              | Default         |
-| ---------------- | ------------------------ | --------------- |
-| `NODE_ENV`       | Environment              | `development`   |
-| `PORT`           | Server port              | `3001`          |
-| `DATABASE_URL`   | SQLite database path     | `./data/dev.db` |
-| `JWT_SECRET`     | JWT signing secret       | —               |
-| `JWT_EXPIRES_IN` | Token expiry             | `7d`            |
-| `API_KEYS`       | Comma-separated API keys | —               |
-| `CORS_ORIGIN`    | Allowed CORS origin      | `*`             |
-| `LOG_LEVEL`      | Pino log level           | `info`          |
+### Core
+
+| Variable         | Description                                        | Default                 |
+| ---------------- | -------------------------------------------------- | ----------------------- |
+| `NODE_ENV`       | Environment                                        | `development`           |
+| `PORT`           | Server port                                        | `3001`                  |
+| `DATABASE_URL`   | SQLite database path                               | `./data/dev.db`         |
+| `JWT_SECRET`     | JWT signing secret (required in production)        | dev-only fallback       |
+| `JWT_EXPIRES_IN` | Token expiry                                       | `7d`                    |
+| `API_KEYS`       | Comma-separated API keys                           | —                       |
+| `CORS_ORIGIN`    | Comma-separated allowed origins (no wildcards)     | `http://localhost:3000` |
+| `LOG_LEVEL`      | Pino log level                                     | `info`                  |
+
+### Rate limiting (optional overrides)
+
+| Variable               | Description                    | Default |
+| ---------------------- | ------------------------------ | ------- |
+| `RATE_LIMIT_AUTH_MAX`  | Auth requests per minute       | `60`    |
+| `RATE_LIMIT_READ_MAX`  | Read requests per minute       | `300`   |
+| `RATE_LIMIT_WRITE_MAX` | Write requests per minute      | `60`    |
+
+### Optional modules
+
+| Variable                                                       | Used by                                                       |
+| -------------------------------------------------------------- | ------------------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET`, `LINEAR_API_KEY`, `DRY_RUN`            | Linear ↔ GitHub sync (`/api/linear-sync/*`)                    |
+| `LINEAR_WEBHOOK_RATE_LIMIT_MAX`, `LINEAR_WEBHOOK_RATE_LIMIT_WINDOW_MS` | Linear webhook rate limiting                            |
+| `REVIEW_WEBHOOK_SECRET`, `REVIEW_ALLOWED_REPOS`, `GITHUB_TOKEN` | PR security-review webhook (`/api/review/*`)                   |
+| `REVIEW_WEBHOOK_RATE_LIMIT_MAX`, `REVIEW_WEBHOOK_RATE_LIMIT_WINDOW_MS` | Review webhook rate limiting                            |
+| `INNGEST_WEBHOOK_SECRET`                                        | Inngest approval-notification webhook (`/webhooks/*`)          |
+| `APNS_ENABLED`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_PRIVATE_KEY`, `APNS_SANDBOX`, `APNS_DB_PATH` | APNS push notifications |
+| `GITHUB_OWNER`, `GITHUB_REPO`, `WEBHOOK_URL`, `WEBHOOK_EVENTS`  | `npm run linear:webhook:setup` helper script                   |
+
+`REVIEW_ALLOWED_REPOS` is fail-closed in production: an empty allowlist rejects all review webhooks (in dev/test it permits any repo with a startup warning).
 
 Copy `.env.example` to `.env` and configure.
 
@@ -265,7 +318,14 @@ npm run native:sqlite:ensure
 
 The script automatically prefers `clang`/`clang++` when available, which avoids the GCC 13 internal compiler error we have seen while compiling bundled SQLite sources.
 
-75 tests across 9 test files covering errors, schemas, middleware, services, and routes.
+The suite spans 30 test files covering errors, schemas, middleware, services, and routes.
+
+## Documentation
+
+- [docs/API.md](docs/API.md) — endpoint reference
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — deployment guide
+- [docs/SECURITY.md](docs/SECURITY.md) — security notes
+- [examples/README.md](examples/README.md) — runnable examples
 
 ## License
 
