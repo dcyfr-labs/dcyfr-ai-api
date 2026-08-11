@@ -101,6 +101,6 @@
   "homepage": "https://github.com/dcyfr-labs/dcyfr-ai-api#readme",
   "overrides": {
     "esbuild": "0.28.1",
-    "js-yaml": "^4.2.0"
+    "js-yaml": "^4.3.1"
   }
 }
