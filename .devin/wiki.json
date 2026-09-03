@@ -1,8 +1,47 @@
 {
   "repo_notes": [
     {
-      "content": "API backend for DCYFR AI services. Document the REST API endpoints, authentication mechanisms, request/response formats, and how the API layer integrates with the core AI framework and external services.",
-      "author": "DCYFR Engineering"
+      "content": "A starter template. The value to a reader is the wiring between Express, Drizzle, JWT and the OpenAPI document, not any one route.",
+      "author": "rei-doc-specialist"
+    },
+    {
+      "content": "Routes, services and middleware each have a matching tests/ directory; treat the tests as the specification when a behaviour is ambiguous.",
+      "author": "rei-doc-specialist"
+    }
+  ],
+  "pages": [
+    {
+      "title": "API Architecture",
+      "purpose": "The request path end to end: Express 5 app assembly, middleware order, routing, the service layer, and where the OpenAPI document is generated."
+    },
+    {
+      "title": "Routes and Schemas",
+      "purpose": "Every route under src/routes/, the schemas that validate each request and response, and how a schema becomes an OpenAPI path.",
+      "parent": "API Architecture"
+    },
+    {
+      "title": "Services",
+      "purpose": "The service layer under src/services/: the boundary between HTTP concerns and business logic, and the contract each service exposes.",
+      "parent": "API Architecture"
+    },
+    {
+      "title": "Data Layer",
+      "purpose": "Drizzle ORM setup under src/db/: schema definition, migrations, connection handling and query patterns.",
+      "parent": "API Architecture"
+    },
+    {
+      "title": "Authentication and Middleware",
+      "purpose": "JWT issuance and verification, the auth middleware, and the rest of the middleware chain including error handling and request logging.",
+      "parent": "API Architecture"
+    },
+    {
+      "title": "Testing",
+      "purpose": "The Vitest suite: unit tests per layer, integration tests against a live app instance, and the helpers that set them up.",
+      "parent": "API Architecture"
+    },
+    {
+      "title": "Deployment",
+      "purpose": "Running the API in a container, the environment it expects, and the health and readiness surfaces."
     }
   ]
 }
