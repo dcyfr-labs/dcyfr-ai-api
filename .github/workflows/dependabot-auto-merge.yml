@@ -15,7 +15,7 @@ permissions:
 jobs:
   auto-merge:
     if: ${{ github.actor == 'dependabot[bot]' }}
-    uses: dcyfr-labs/.github/.github/workflows/dependabot-auto-merge.yml@main
+    uses: dcyfr-labs/.github/.github/workflows/dependabot-auto-merge.yml@fix/auto-merge-startup-failure
     permissions:
       contents: write
       pull-requests: write
