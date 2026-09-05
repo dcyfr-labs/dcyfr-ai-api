@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.0",
-    "@changesets/cli": "^3.0.0",
+    "@changesets/cli": "^3.0.1",
     "@eslint/js": "^10.0.1",
     "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.12",
