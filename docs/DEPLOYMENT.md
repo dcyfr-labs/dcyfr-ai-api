@@ -426,6 +426,6 @@ Backup configuration and uploaded files regularly.
 
 ## Support
 
-- Documentation: [GitHub Wiki](https://github.com/dcyfr/dcyfr-ai-api/wiki)
-- Issues: [GitHub Issues](https://github.com/dcyfr/dcyfr-ai-api/issues)
+- Documentation: [GitHub Wiki](https://github.com/dcyfr-labs/dcyfr-ai-api/wiki)
+- Issues: [GitHub Issues](https://github.com/dcyfr-labs/dcyfr-ai-api/issues)
 - Security: security@dcyfr.ai
