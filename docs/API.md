@@ -77,7 +77,7 @@ npm install @dcyfr/ai-api
 ### From Source
 
 ```bash
-git clone https://github.com/dcyfr/dcyfr-ai-api.git
+git clone https://github.com/dcyfr-labs/dcyfr-ai-api.git
 cd dcyfr-ai-api
 npm install
 npm run build
@@ -1193,9 +1193,9 @@ interface ErrorResponse {
 
 ## Support & Contributing
 
-- **Documentation:** [GitHub Wiki](https://github.com/dcyfr/dcyfr-ai-api/wiki)
-- **Issues:** [GitHub Issues](https://github.com/dcyfr/dcyfr-ai-api/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/dcyfr/dcyfr-ai-api/discussions)
+- **Documentation:** [GitHub Wiki](https://github.com/dcyfr-labs/dcyfr-ai-api/wiki)
+- **Issues:** [GitHub Issues](https://github.com/dcyfr-labs/dcyfr-ai-api/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/dcyfr-labs/dcyfr-ai-api/discussions)
 - **Contributing:** See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
