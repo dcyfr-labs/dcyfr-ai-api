@@ -17,3 +17,6 @@ drizzle/
 *.log
 coverage/
 .DS_Store
+
+# Local runtime logs (Rei gateway audit/parity output landed here once)
+logs/
