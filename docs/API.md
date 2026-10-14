@@ -1,7 +1,7 @@
 # API Documentation
 
 **Package:** @dcyfr/ai-api  
-**Version:** 0.1.1  
+**Version:** 2.0.0  
 **License:** MIT
 
 A production-ready REST API template built with Express 5, TypeScript, Drizzle ORM, and JWT authentication. Features comprehensive error handling, request validation, database migrations, and OpenAPI documentation.
@@ -1178,16 +1178,14 @@ interface ErrorResponse {
 
 ### Stability Guarantees
 
-**v1.x** (current: v0.1.1, targeting v1.0.0):
+**v2.x** (current: v2.0.0):
 - ✅ Stable API endpoints
 - ✅ Stable request/response formats
 - ✅ Stable error responses
 - ✅ Stable database schema (with migrations)
 - ✅ No breaking changes in minor/patch versions
 
-**Pre-1.0 (current):**
-- Minor versions may include breaking changes
-- Follow CHANGELOG.md for upgrade guides
+**Upgrades:** follow CHANGELOG.md for upgrade guides.
 
 ---
 
@@ -1201,5 +1199,5 @@ interface ErrorResponse {
 ---
 
 **Last Updated:** February 8, 2026  
-**Version:** 0.1.1  
+**Version:** 2.0.0  
 **License:** MIT

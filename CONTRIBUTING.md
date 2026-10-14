@@ -53,3 +53,7 @@ git checkout -b fix/DCYFR-456-resolve-bug
 4. Ensure `npm run test:run` passes
 5. Submit PR with title: `[DCYFR-<NUMBER>] Brief description`
 6. Include `DCYFR-<NUMBER>` reference in commit messages
+
+## Code of Conduct
+
+Participation is governed by the [DCYFR Labs Code of Conduct](https://github.com/dcyfr-labs/.github/blob/main/CODE_OF_CONDUCT.md).

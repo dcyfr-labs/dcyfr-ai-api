@@ -54,9 +54,9 @@ npm run dev
 | Package                                                            | Purpose                  | Type        |
 | ------------------------------------------------------------------ | ------------------------ | ----------- |
 | [@dcyfr/ai](https://github.com/dcyfr-labs/dcyfr-ai)                 | Core AI framework        | npm package |
-| [@dcyfr/ai-nodejs](https://github.com/dcyfr-labs/dcyfr-ai-nodejs)   | Node.js starter template | Template    |
+| [@dcyfr/ai-nodejs-starter](https://github.com/dcyfr-labs/dcyfr-ai-nodejs) (unpublished) | Node.js starter template | Template    |
 | [@dcyfr/ai-graphql](https://github.com/dcyfr-labs/dcyfr-ai-graphql) | GraphQL API template     | Template    |
-| [dcyfr-labs](https://github.com/dcyfr-labs/dcyfr-labs)              | Production Next.js app   | Application |
+| [dcyfr.ai](https://www.dcyfr.ai)                                    | Production Next.js app   | Application |
 
 ---
 
