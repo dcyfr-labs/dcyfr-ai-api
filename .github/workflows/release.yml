@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 env:
-  NODE_VERSION: '24.13.0'
+  NODE_VERSION: '24.22.1'
   NPM_CONFIG_PROVENANCE: true
 
 jobs:
@@ -59,12 +59,11 @@ jobs:
         run: npm run native:sqlite:ensure
       
       - name: Upgrade npm for Trusted Publishing
-        # Bounded to 11.x on purpose: npm 12 requires node
-        # `^22.22.2 || ^24.15.0 || >=26.0.0`, which the 24.13.0 pin above does not
-        # satisfy — so `npm@latest` aborts with EBADENGINE and fails the release
-        # outright. `^11` keeps the >=11.5 OIDC floor this step exists for.
-        # Widen once the node pin moves to >=24.15.0.
-        run: npm install -g npm@^11
+        # Bounded to one major on purpose: npm 12 requires node
+        # `^22.22.2 || ^24.15.0 || >=26.0.0`, which the 24.22.1 pin above
+        # satisfies, and it keeps the >=11.5 OIDC floor this step exists for.
+        # Check the next major's engines before widening.
+        run: npm install -g npm@^12
       
       - name: Verify npm version and OIDC support
         run: |
