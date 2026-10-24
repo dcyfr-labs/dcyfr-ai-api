@@ -56,10 +56,15 @@ jobs:
           cache: 'npm'
       - run: npm install --include=dev
       - run: npm run native:sqlite:ensure
-      - run: npm run test:run
+      # test:coverage is test:run plus v8 coverage; test:run alone writes no
+      # coverage/ directory, so the upload below had nothing to send.
+      - run: npm run test:coverage
       - name: Upload coverage
-        if: matrix.node-version == '22'
+        # First matrix leg only, so artifact names never collide. Keyed on the
+        # index, not a version literal, so a Node bump cannot silently skip it.
+        if: strategy.job-index == 0
         uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage/
+          if-no-files-found: error
