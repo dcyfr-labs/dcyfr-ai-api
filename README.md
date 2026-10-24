@@ -258,6 +258,7 @@ const user = db.select().from(users).where(eq(users.id, 1)).get();
 | ---------------- | -------------------------------------------------- | ----------------------- |
 | `NODE_ENV`       | Environment                                        | `development`           |
 | `PORT`           | Server port                                        | `3001`                  |
+| `HOST`           | Bind address (the Docker image sets `0.0.0.0`)     | `127.0.0.1`             |
 | `DATABASE_URL`   | SQLite database path                               | `./data/dev.db`         |
 | `JWT_SECRET`     | JWT signing secret (required in production)        | dev-only fallback       |
 | `JWT_EXPIRES_IN` | Token expiry                                       | `7d`                    |

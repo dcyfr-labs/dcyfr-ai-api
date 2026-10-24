@@ -27,6 +27,10 @@ function getJwtSecret(): string {
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3001', 10),
+  // Loopback by default so a dev server is never exposed on the LAN. The
+  // Docker image sets HOST=0.0.0.0, because inside a container loopback is
+  // unreachable from a published port.
+  host: process.env.HOST || '127.0.0.1',
 
   db: {
     url: process.env.DATABASE_URL || './data/dev.db',

@@ -13,8 +13,8 @@ migrate(sqliteDb);
 // Start server
 const app = createApp();
 
-app.listen(config.port, '127.0.0.1', () => {
-  logger.info({ port: config.port, env: config.env }, 'Server started');
+app.listen(config.port, config.host, () => {
+  logger.info({ host: config.host, port: config.port, env: config.env }, 'Server started');
   logger.info(`API docs: http://localhost:${config.port}/docs`);
   logger.info(`Health:   http://localhost:${config.port}/health`);
 });
