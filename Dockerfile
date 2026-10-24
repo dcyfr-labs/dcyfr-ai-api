@@ -20,8 +20,13 @@ RUN npm run build
 # Production runner
 FROM base AS runner
 ENV NODE_ENV=production
+# Listen on all interfaces inside the container; the published port decides exposure.
+ENV HOST=0.0.0.0
+# /app/data holds the SQLite files and must be writable by the api user. A named
+# volume mounted here on first use copies this directory's ownership.
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 api
+    adduser --system --uid 1001 api && \
+    mkdir -p /app/data && chown api:nodejs /app/data
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
