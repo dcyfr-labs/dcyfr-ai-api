@@ -2,7 +2,10 @@ services:
   api:
     build: .
     ports:
-      - '3001:3001'
+      # Loopback only: the image binds 0.0.0.0 inside the container, so a bare
+      # '3001:3001' would publish the API on every host interface (LAN included).
+      # Put a reverse proxy in front, or change this, to serve it beyond the host.
+      - '127.0.0.1:3001:3001'
     environment:
       - NODE_ENV=production
       - PORT=3001

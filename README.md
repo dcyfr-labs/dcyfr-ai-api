@@ -298,8 +298,10 @@ docker compose up -d
 
 # Or build image directly
 docker build -t dcyfr-api .
-docker run -p 3001:3001 dcyfr-api
+docker run -p 127.0.0.1:3001:3001 dcyfr-api
 ```
+
+Both publish the port on `127.0.0.1` only. To reach the API from other machines, put a reverse proxy in front of it.
 
 ## Testing
 
