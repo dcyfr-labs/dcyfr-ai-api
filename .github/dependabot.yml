@@ -1,6 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
+    assignees:
+      - "dcyfr"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -16,6 +18,8 @@ updates:
       prefix: "deps"
 
   - package-ecosystem: "github-actions"
+    assignees:
+      - "dcyfr"
     directory: "/"
     schedule:
       interval: "weekly"
