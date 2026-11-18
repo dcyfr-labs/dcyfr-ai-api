@@ -325,6 +325,7 @@ The suite spans 30 test files covering errors, schemas, middleware, services, an
 
 ## Documentation
 
+- [docs/README.md](docs/README.md): documentation index
 - [docs/API.md](docs/API.md) — endpoint reference
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — deployment guide
 - [docs/SECURITY.md](docs/SECURITY.md) — security notes
