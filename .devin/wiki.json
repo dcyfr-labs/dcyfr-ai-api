@@ -2,11 +2,11 @@
   "repo_notes": [
     {
       "content": "A starter template. The value to a reader is the wiring between Express, Drizzle, JWT and the OpenAPI document, not any one route.",
-      "author": "rei-doc-specialist"
+      "author": "dcyfr-doc-specialist"
     },
     {
       "content": "Routes, services and middleware each have a matching tests/ directory; treat the tests as the specification when a behaviour is ambiguous.",
-      "author": "rei-doc-specialist"
+      "author": "dcyfr-doc-specialist"
     }
   ],
   "pages": [
